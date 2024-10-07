@@ -1,10 +1,13 @@
 package server;
+import item.Beacon;
+import item.BeaconCluster;
+import item.Link;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
-import java.util.Scanner;
 
 public class PhysarumSolver {
 
@@ -13,12 +16,13 @@ public class PhysarumSolver {
     private static final double GAMMA = 1.5;
     private static final double DELTA_TIME = 0.01;
     private static final int PLOT = 1;
-    private static final double INIT_THICKNESS = 54.0;
+    private static final double INIT_THICKNESS = 100.0;
     private static final double INIT_LENGTH = 1.0;
     private static final double THRESHOLD_1 = 0.5;
     private static final double THRESHOLD_2 = 1.0;
 
     // 基本パラメータ
+    private final ArrayList<ArrayList<Link>> link = new ArrayList<>();
     private ArrayList<Double> Q_Kirchhoff;
     private ArrayList<Double> P_tubePressure;
     private ArrayList<ArrayList<Double>> Q_tubeFlow;
@@ -40,9 +44,11 @@ public class PhysarumSolver {
     private ArrayList<Double> y_coordinate;
     private ArrayList<ArrayList<Double>> node_distance;
 
+
     public PhysarumSolver(int node) {
         initialize(node);
     }
+
 
     public void initialize(int node) {
         int nodeExcept = node - 1;
@@ -76,6 +82,16 @@ public class PhysarumSolver {
         y_coordinate = new ArrayList<>(node);
         node_distance = createMatrix(node, node);
 
+        // node数に応じてArrayList<Link>を初期化
+        for (int i = 0; i < node; i++) {
+            ArrayList<Link> innerList = new ArrayList<>(node); // 初期容量 node の ArrayList を作成
+            for (int j = 0; j < node; j++) {
+                innerList.add(new Link()); // Link オブジェクトを追加
+            }
+            link.add(innerList); // 外側の ArrayList に追加
+        }
+
+
         // x_coordinate と y_coordinate の初期化
         for (int i = 0; i < node; i++) {
             x_coordinate.add(0.0);  // 初期値を追加
@@ -95,26 +111,19 @@ public class PhysarumSolver {
         }
         return matrix;
     }
+
     // nodeConfigureメソッドの追加
-    public void nodeConfigure(String NET_file, int node, int SOURCE, int DIST) throws IOException {
-        Random rand = new Random();
+    public void linkConfigure(String NET_file, int node, BeaconCluster beaconList) throws IOException {
         double maxDistance = Math.sqrt(2);  // 最大距離 sqrt(2)
-
-        for (int i = 0; i < node; i++) {
-            x_coordinate.set(i, rand.nextDouble());
-            y_coordinate.set(i, rand.nextDouble());
-        }
-
-
 
         // ファイル出力処理
         try (FileWriter writer = new FileWriter(new File(NET_file))) {
             writer.write("*Vertices\t" + node + "\n");
             for (int i = 0; i < node; i++) {
-                if (i == SOURCE || i == DIST) {
-                    writer.write(String.format("%d \"%d\" %.4f %.4f ic Black\n", i + 1, i + 1, x_coordinate.get(i), y_coordinate.get(i)));
+                if (i == beaconList.getBeacon(0).getId()|| i == beaconList.getBeacon(1).getId()) {
+                    writer.write(String.format("%d \"%d\" %.4f %.4f ic Black\n", i + 1, i + 1, beaconList.getBeacon(i).getX(), beaconList.getBeacon(i).getY()));
                 } else {
-                    writer.write(String.format("%d \"%d\" %.4f %.4f ic White\n", i + 1, i + 1, x_coordinate.get(i), y_coordinate.get(i)));
+                    writer.write(String.format("%d \"%d\" %.4f %.4f ic White\n", i + 1, i + 1, beaconList.getBeacon(i).getX(), beaconList.getBeacon(i).getY()));
                 }
             }
             writer.write("*Arcs\n*Edges\n");
@@ -123,26 +132,49 @@ public class PhysarumSolver {
             for (int i = 0; i < node; i++) {
                 for (int j = 0; j < node; j++) {
                     if (i == j) {
+                        link.get(i).get(j).setD_tubeThickness(0.0);
+                        link.get(i).get(j).setL_tubeLength(INF);
+                        /**
                         D_tubeThickness.get(i).set(j, 0.0);
                         L_tubeLength.get(i).set(j, INF);
-                    } else if (i != j) {
-                        node_distance.get(i).set(j, Math.sqrt(Math.pow(x_coordinate.get(j) - x_coordinate.get(i), 2) +
-                                Math.pow(y_coordinate.get(j) - y_coordinate.get(i), 2)));
-                        double distance = node_distance.get(i).get(j);
+                         */
+                    } else {
+                        link.get(i).get(j).setDistance(Math.sqrt(Math.pow(beaconList.getBeacon(i).getX() - beaconList.getBeacon(j).getX(), 2) + Math.pow(beaconList.getBeacon(i).getY() - beaconList.getBeacon(j).getY(), 2)));
+                        //node_distance.get(i).set(j, Math.sqrt(Math.pow(x_coordinate.get(j) - x_coordinate.get(i), 2) + Math.pow(y_coordinate.get(j) - y_coordinate.get(i), 2)));
+                        double distance = link.get(i).get(j).getDistance();
+                        //double distance = node_distance.get(i).get(j);
                         //デバッグ
                         System.out.println("node_distance[" + i + "][" + j + "] = " + distance);
                         if (0.0 < distance && distance <= THRESHOLD_1) {
                             writer.write(String.format("%d %d 1\n", i + 1, j + 1));
+                            link.get(i).get(j).setLink(beaconList.getBeacon(i), beaconList.getBeacon(j), 10);
+                            link.get(i).get(j).setD_tubeThickness(INIT_THICKNESS);
+                            link.get(i).get(j).setL_tubeLength(INIT_LENGTH);
+                            link.get(i).get(j).setCongestionRate(INIT_THICKNESS);
+                            /**
                             D_tubeThickness.get(i).set(j, INIT_THICKNESS);
                             L_tubeLength.get(i).set(j, INIT_LENGTH);
+                             */
                         } else if (THRESHOLD_1 < distance && distance <= THRESHOLD_2) {
                             writer.write(String.format("%d %d 1\n", i + 1, j + 1));
+                            link.get(i).get(j).setLink(beaconList.getBeacon(i), beaconList.getBeacon(j), 10);
+                            link.get(i).get(j).setD_tubeThickness(INIT_THICKNESS);
+                            link.get(i).get(j).setL_tubeLength(INIT_LENGTH);
+                            link.get(i).get(j).setCongestionRate(INIT_THICKNESS);
+                            /**
                             D_tubeThickness.get(i).set(j, INIT_THICKNESS);
                             L_tubeLength.get(i).set(j, INIT_LENGTH);
+                             */
                         } else if (THRESHOLD_2 < distance && distance <= maxDistance) {
                             writer.write(String.format("%d %d 1\n", i + 1, j + 1));
+                            link.get(i).get(j).setLink(beaconList.getBeacon(i), beaconList.getBeacon(j), 10);
+                            link.get(i).get(j).setD_tubeThickness(INIT_THICKNESS);
+                            link.get(i).get(j).setL_tubeLength(INIT_LENGTH);
+                            link.get(i).get(j).setCongestionRate(INIT_THICKNESS);
+                            /**
                             D_tubeThickness.get(i).set(j, INIT_THICKNESS);
                             L_tubeLength.get(i).set(j, INIT_LENGTH);
+                             */
                         } else {
                             L_tubeLength.get(i).set(j, INF);
                         }
@@ -153,12 +185,12 @@ public class PhysarumSolver {
     }
 
     // setTopologyColorメソッドの追加
-    public void setTopologyColor(int node, int SOURCE, int DIST, double eps, double Q_allFlow, int ct) throws IOException {
+    public void setTopologyColor(int node, Beacon SOURCE, Beacon DIST, double eps, double Q_allFlow, int ct) throws IOException {
         String filename = "src/result/test_topology_" + (ct + 1) + ".net";
         try (FileWriter writer = new FileWriter(filename)) {
             writer.write("*Vertices\t" + node + "\n");
             for (int i = 0; i < node; i++) {
-                if (i == SOURCE || i == DIST) {
+                if (i == SOURCE.getId() || i == DIST.getId()) {
                     writer.write(String.format("%d \"%d\" %.4f %.4f ic Black\n", i + 1, i + 1, x_coordinate.get(i), y_coordinate.get(i)));
                 } else {
                     writer.write(String.format("%d \"%d\" %.4f %.4f ic White\n", i + 1, i + 1, x_coordinate.get(i), y_coordinate.get(i)));
@@ -168,9 +200,9 @@ public class PhysarumSolver {
 
             for (int i = 0; i < node; i++) {
                 for (int j = 0; j < node; j++) {
-                    if (L_tubeLength.get(i).get(j) != INF) {
-                        double flow = Q_tubeFlow.get(i).get(j);
-                        if (0 < node_distance.get(i).get(j) && node_distance.get(i).get(j) <= Math.sqrt(2)) {
+                    if (link.get(i).get(j).getL_tubeLength() != INF){//L_tubeLength.get(i).get(j) != INF) {
+                        double flow = link.get(i).get(j).getQ_tubeFlow();//Q_tubeFlow.get(i).get(j);
+                        if (0 < link.get(i).get(j).getDistance() && link.get(i).get(j).getDistance() <= Math.sqrt(2)) {//if (0 < node_distance.get(i).get(j) && node_distance.get(i).get(j) <= Math.sqrt(2))
                             if (flow > 0 && flow <= eps) {
                                 // Small flow, no color
                             } else if (flow > eps && flow <= THRESHOLD_1) {
@@ -194,8 +226,10 @@ public class PhysarumSolver {
         int a=0, b, i, j;
         double degeneracyEffect = 1.0;
 
+        /**
         // ノード構成の設定（Pajekファイルから読み込む）
-        nodeConfigure(filePath, node, source, dist);
+        linkConfigure(filePath, node, source, dist);
+         */
 
         while (ct < numLoop) {
             // Kirchhoffの初期設定
@@ -290,15 +324,15 @@ public class PhysarumSolver {
             // 結果のプロット
             if ((ct + 1) % PLOT == 0) {
                 System.out.println("Iteration: " + (ct+1));
+                /**
                 setTopologyColor(node, source, dist, eps, Q_allFlow, ct);
-
+                 */
             }
 
             ct++;
         }
     }
-
-
+    /**
     public static void main(String[] args) throws IOException {
         Scanner scanner = new Scanner(System.in);
 
@@ -314,8 +348,10 @@ public class PhysarumSolver {
         String filePath = "src/result/practice.net";
 
         PhysarumSolver solver = new PhysarumSolver(node);
+
         solver.run(node, 0, 1, Q_allFlow, numLoop, filePath);
 
         scanner.close();
     }
+     */
 }
