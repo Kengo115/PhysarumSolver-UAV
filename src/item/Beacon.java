@@ -11,15 +11,7 @@ public class Beacon {
         this.y = y;
         this.id = id;
     }
-    //座標を設定する
-    public void setPos(double x, double y) {
-        this.x = x;
-        this.y = y;
-    }
-    //idを設定する
-    public void setId(int id) {
-        this.id = id;
-    }
+
     //x座標を返す
     public double getX() {
         return x;

@@ -1,4 +1,6 @@
 package server;
+import client.Client;
+import client.ClientController;
 import item.Beacon;
 import item.BeaconCluster;
 import item.Link;
@@ -43,6 +45,9 @@ public class PhysarumSolver {
     private ArrayList<Double> x_coordinate;
     private ArrayList<Double> y_coordinate;
     private ArrayList<ArrayList<Double>> node_distance;
+
+    private Client client;
+    private ClientController clientController;
 
 
     public PhysarumSolver(int node) {
@@ -99,6 +104,25 @@ public class PhysarumSolver {
         }
     }
 
+    //フィールドをすべてリセットする
+    public void reset(){
+        Q_Kirchhoff.clear();
+        P_tubePressure.clear();
+        Q_Kirchhoff_sinkExcept.clear();
+        P_tubePressure_sinkExcept.clear();
+        Q_tubeFlow.clear();
+        D_tubeThickness.clear();
+        L_tubeLength.clear();
+        D_tubeThickness_deltaT.clear();
+        pressureCoefficient.clear();
+        pressureCoefficient_sinkExcept.clear();
+        Q_tubeFlow_sigmoidOutput.clear();
+        x_coordinate.clear();
+        y_coordinate.clear();
+        node_distance.clear();
+        link.clear();
+    }
+
 
     private ArrayList<ArrayList<Double>> createMatrix(int rows, int cols) {
         ArrayList<ArrayList<Double>> matrix = new ArrayList<>(rows);
@@ -120,7 +144,7 @@ public class PhysarumSolver {
         try (FileWriter writer = new FileWriter(new File(NET_file))) {
             writer.write("*Vertices\t" + node + "\n");
             for (int i = 0; i < node; i++) {
-                if (i == beaconList.getBeacon(0).getId()|| i == beaconList.getBeacon(1).getId()) {
+                if (i == beaconList.getBeacon(0).getId() || i == beaconList.getBeacon(1).getId()) {
                     writer.write(String.format("%d \"%d\" %.4f %.4f ic Black\n", i + 1, i + 1, beaconList.getBeacon(i).getX(), beaconList.getBeacon(i).getY()));
                 } else {
                     writer.write(String.format("%d \"%d\" %.4f %.4f ic White\n", i + 1, i + 1, beaconList.getBeacon(i).getX(), beaconList.getBeacon(i).getY()));
@@ -135,8 +159,8 @@ public class PhysarumSolver {
                         link.get(i).get(j).setD_tubeThickness(0.0);
                         link.get(i).get(j).setL_tubeLength(INF);
                         /**
-                        D_tubeThickness.get(i).set(j, 0.0);
-                        L_tubeLength.get(i).set(j, INF);
+                         D_tubeThickness.get(i).set(j, 0.0);
+                         L_tubeLength.get(i).set(j, INF);
                          */
                     } else {
                         link.get(i).get(j).setDistance(Math.sqrt(Math.pow(beaconList.getBeacon(i).getX() - beaconList.getBeacon(j).getX(), 2) + Math.pow(beaconList.getBeacon(i).getY() - beaconList.getBeacon(j).getY(), 2)));
@@ -152,8 +176,8 @@ public class PhysarumSolver {
                             link.get(i).get(j).setL_tubeLength(INIT_LENGTH);
                             link.get(i).get(j).setCongestionRate(INIT_THICKNESS);
                             /**
-                            D_tubeThickness.get(i).set(j, INIT_THICKNESS);
-                            L_tubeLength.get(i).set(j, INIT_LENGTH);
+                             D_tubeThickness.get(i).set(j, INIT_THICKNESS);
+                             L_tubeLength.get(i).set(j, INIT_LENGTH);
                              */
                         } else if (THRESHOLD_1 < distance && distance <= THRESHOLD_2) {
                             writer.write(String.format("%d %d 1\n", i + 1, j + 1));
@@ -162,8 +186,8 @@ public class PhysarumSolver {
                             link.get(i).get(j).setL_tubeLength(INIT_LENGTH);
                             link.get(i).get(j).setCongestionRate(INIT_THICKNESS);
                             /**
-                            D_tubeThickness.get(i).set(j, INIT_THICKNESS);
-                            L_tubeLength.get(i).set(j, INIT_LENGTH);
+                             D_tubeThickness.get(i).set(j, INIT_THICKNESS);
+                             L_tubeLength.get(i).set(j, INIT_LENGTH);
                              */
                         } else if (THRESHOLD_2 < distance && distance <= maxDistance) {
                             writer.write(String.format("%d %d 1\n", i + 1, j + 1));
@@ -172,17 +196,23 @@ public class PhysarumSolver {
                             link.get(i).get(j).setL_tubeLength(INIT_LENGTH);
                             link.get(i).get(j).setCongestionRate(INIT_THICKNESS);
                             /**
-                            D_tubeThickness.get(i).set(j, INIT_THICKNESS);
-                            L_tubeLength.get(i).set(j, INIT_LENGTH);
+                             D_tubeThickness.get(i).set(j, INIT_THICKNESS);
+                             L_tubeLength.get(i).set(j, INIT_LENGTH);
                              */
                         } else {
-                            L_tubeLength.get(i).set(j, INF);
+                            link.get(i).get(j).setL_tubeLength(INF);
                         }
                     }
                 }
             }
         }
     }
+
+    public void routeRequest(Client client){
+
+    }
+
+
 
     // setTopologyColorメソッドの追加
     public void setTopologyColor(int node, Beacon SOURCE, Beacon DIST, double eps, double Q_allFlow, int ct) throws IOException {

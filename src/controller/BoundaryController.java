@@ -1,4 +1,6 @@
 package controller;
+import client.Client;
+import client.ClientController;
 import item.*;
 import server.PhysarumSolver;
 
@@ -13,6 +15,9 @@ public class BoundaryController {
     static BeaconCluster beaconCluster;
     public ArrayList<Beacon> beaconList = new ArrayList<>();
     static PhysarumSolver solver;
+    static Client client;
+    static ClientController clientController;
+
     String filePath = "src/result/practice.net";
 
     //ネットワークトポロジーを設定する関数
@@ -21,16 +26,6 @@ public class BoundaryController {
         beaconList = beaconCluster.getBeaconList();
         //ビーコンの情報を設定
         setLink();
-    }
-
-    private void setBeacon() {
-        Random random = new Random();
-        for (int i = 0; i < nodeNum; i++) {
-            //ビーコンの座標を設定
-            beaconList.get(i).setPos(random.nextDouble(), random.nextDouble());
-            //ビーコンのIDを設定
-            beaconList.get(i).setId(i);
-        }
     }
 
     private void setLink() throws IOException {
@@ -43,6 +38,28 @@ public class BoundaryController {
 
     public int getNodeNum() {
         return nodeNum;
+    }
+
+    //クライアントを生成する関数
+    public Client createClient(){
+        Random random = new Random();
+        int sourceId = random.nextInt(nodeNum);
+        int distinationId = random.nextInt(nodeNum);
+        while (sourceId == distinationId){
+            distinationId = random.nextInt(nodeNum);
+        }
+        Beacon source = beaconCluster.getBeacon(sourceId);
+        Beacon distination = beaconCluster.getBeacon(distinationId);
+        int uavNum = random.nextInt(10);
+        Client client = new Client(source, distination, uavNum);
+        clientController.addClient(client);
+
+        return client;
+    }
+
+    public void routeRequest(Client client){
+        //PSを実行
+        solver.routeRequest(client);
     }
 
     public static void main(String[] args) {
