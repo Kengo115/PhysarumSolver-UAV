@@ -19,7 +19,7 @@ public class Client {
         createUav();
     }
 
-    //UAV数だけUAVを生成
+    /** UAVを生成する*/
     public void createUav() {
         for (int i = 0; i < TheNumberOfUAV; i++) {
             Uav uav = new Uav(1, Source.getX(), Source.getY(), i, Source, Distination);
@@ -27,6 +27,7 @@ public class Client {
         }
     }
 
+    /**アクセッサ*/
     public int getFinishFlyingCounter() {
         return finishFlyingCounter;
     }
@@ -35,6 +36,7 @@ public class Client {
         this.finishFlyingCounter = finishFlyingCounter;
     }
 
+    /** 飛行完了*/
     public void incrementFinishFlyingCounter() {
         finishFlyingCounter++;
     }

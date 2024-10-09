@@ -1,9 +1,9 @@
 package item;
 
 public class Link {
-    //beacon1-beacon2のリンク情報
-    private Beacon beacon1;
-    private Beacon beacon2;
+    /**src-distのリンク情報**/
+    private Beacon srcBeacon;
+    private Beacon distBeacon;
     private double distance;
     private double capacity;
     private double flyingUAV;
@@ -17,12 +17,13 @@ public class Link {
 
 
     public void setLink(Beacon beacon1, Beacon beacon2, double capacity) {
-        this.beacon1 = beacon1;
-        this.beacon2 = beacon2;
+        this.srcBeacon = beacon1;
+        this.distBeacon = beacon2;
         this.capacity = capacity;
     }
 
 
+    /**セッタ**/
     public void setDistance(double distance) {
         this.distance = distance;
     }
@@ -39,28 +40,28 @@ public class Link {
         this.congestionRate = congestionRate;
     }
 
-    public double getP_tubePressure() {
-        return P_tubePressure;
-    }
-
     public void setP_tubePressure(double p_tubePressure) {
         P_tubePressure = p_tubePressure;
-    }
-
-    public double getQ_Kirchhoff() {
-        return Q_Kirchhoff;
     }
 
     public void setQ_Kirchhoff(double q_Kirchhoff) {
         Q_Kirchhoff = q_Kirchhoff;
     }
 
+    /**ゲッタ**/
+    public double getP_tubePressure() {
+        return P_tubePressure;
+    }
+    public double getQ_Kirchhoff() {
+        return Q_Kirchhoff;
+    }
+
     //接続ビーコンを返す
     public Beacon getBeacon1() {
-        return beacon1;
+        return srcBeacon;
     }
-    public Beacon getBeacon2() {
-        return beacon2;
+    public Beacon getDistBeacon() {
+        return distBeacon;
     }
     //容量を返す
     public double getCapacity() {

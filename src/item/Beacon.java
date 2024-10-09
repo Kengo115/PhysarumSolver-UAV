@@ -5,14 +5,12 @@ public class Beacon {
     private double y;
     private int id;
 
-    //コンストラクタ
     public Beacon(double x, double y, int id) {
         this.x = x;
         this.y = y;
         this.id = id;
     }
 
-    //x座標を返す
     public double getX() {
         return x;
     }

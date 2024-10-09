@@ -11,16 +11,14 @@ import java.util.Random;
 
 public class BoundaryController {
     private static int nodeNum;
-    //ビーコンクラスタークラスを生成
     static BeaconCluster beaconCluster;
     public ArrayList<Beacon> beaconList = new ArrayList<>();
     static PhysarumSolver solver;
-    static Client client;
     static ClientController clientController;
 
     String filePath = "src/result/practice.net";
 
-    //ネットワークトポロジーを設定する関数
+    /**ネットワークトポロジーを設定する関数*/
     public void setNetworkTopology() throws IOException {
         //ビーコンクラスタークラスを取得
         beaconList = beaconCluster.getBeaconList();
@@ -28,6 +26,7 @@ public class BoundaryController {
         setLink();
     }
 
+    /**リンクを設定する*/
     private void setLink() throws IOException {
         solver.linkConfigure(filePath, nodeNum, beaconCluster);
     }
@@ -40,7 +39,7 @@ public class BoundaryController {
         return nodeNum;
     }
 
-    //クライアントを生成する関数
+    /**クライアントを生成する関数*/
     public Client createClient(){
         Random random = new Random();
         int sourceId = random.nextInt(nodeNum);
@@ -59,7 +58,6 @@ public class BoundaryController {
 
     public void routeRequest(Client client){
         //PSを実行
-        solver.routeRequest(client);
     }
 
     public static void main(String[] args) {
