@@ -6,16 +6,16 @@ public class Uav {
     private double y;
     private int id;
     private Beacon Source;
-    private Beacon Distination;
+    private Beacon Destination;
 
     //コンストラクタ
-    public Uav(int speed, double x, double y, int id, Beacon Source, Beacon Distination) {
+    public Uav(int speed, double x, double y, int id, Beacon Source, Beacon Destination) {
         this.speed = speed;
         this.x = x;
         this.y = y;
         this.id = id;
         this.Source = Source;
-        this.Distination = Distination;
+        this.Destination = Destination;
     }
 
     //速度を返す
@@ -40,6 +40,6 @@ public class Uav {
     }
     //到着地を返す
     public Beacon getDistination() {
-        return Distination;
+        return Destination;
     }
 }

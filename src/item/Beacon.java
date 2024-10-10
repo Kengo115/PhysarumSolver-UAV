@@ -4,6 +4,8 @@ public class Beacon {
     private double x;
     private double y;
     private int id;
+    private double Q_Kirchhoff;
+    private double P_tubePressure;
 
     //コンストラクタ
     public Beacon(double x, double y, int id) {
