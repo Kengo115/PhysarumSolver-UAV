@@ -3,11 +3,13 @@ import client.Client;
 import client.ClientController;
 import item.Beacon;
 import item.BeaconCluster;
+import item.Flow;
 import item.Link;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 public class PhysarumSolver {
@@ -17,11 +19,15 @@ public class PhysarumSolver {
     private static final double GAMMA = 1.5;
     private static final double DELTA_TIME = 0.01;
     private static final int PLOT = 1;
-    private static final double INIT_THICKNESS = 100.0;
+    private static final double INIT_THICKNESS = 1.0;
     private static final double INIT_LENGTH = 1.0;
+    private static final double INIT_RATE = 100.0;
     private static final double THRESHOLD_1 = 0.5;
     private static final double THRESHOLD_2 = 1.0;
     private static int node;
+    private boolean fig_SOURCE = false;
+    private boolean fig_DIST = false;
+    private static final double coefficient_tanh = 1;
     // 基本パラメータ
     private final ArrayList<ArrayList<Link>> link = new ArrayList<>();
     private ArrayList<Double> Q_Kirchhoff;
@@ -154,10 +160,10 @@ public class PhysarumSolver {
                     if(distance > maxDistance) {
                         link.get(i).get(j).setL_tubeLength(INF);
                     }
-                    link.get(i).get(j).setLink(beaconList.getBeacon(i), beaconList.getBeacon(j), 10);
+                    link.get(i).get(j).setLink(beaconList.getBeacon(i), beaconList.getBeacon(j), 20);
                     link.get(i).get(j).setD_tubeThickness(INIT_THICKNESS);
                     link.get(i).get(j).setL_tubeLength(INIT_LENGTH);
-                    link.get(i).get(j).setCongestionRate(INIT_THICKNESS);
+                    link.get(i).get(j).setCongestionRate(INIT_RATE);
                 }
             }
         }
@@ -165,16 +171,39 @@ public class PhysarumSolver {
 
     public void nodeConfigureToPajek(String NET_file, Client client, BeaconCluster beaconList) {
         double maxDistance = Math.sqrt(2);  // 最大距離 sqrt(2)
+        ArrayList<Integer> sourceCluster = new ArrayList<>();
+        ArrayList<Integer> distCluster = new ArrayList<>();
+
+        for (int k = 0; k < client.getFlowList().size(); k++) {
+            //sourceとdistを取得
+            Beacon source = client.getFlow(k).getSource();
+            Beacon dist = client.getFlow(k).getDestination();
+
+            sourceCluster.add(source.getId());
+            distCluster.add(dist.getId());
+        }
 
         // ファイル出力処理
         try (FileWriter writer = new FileWriter(new File(NET_file))) {
             writer.write("*Vertices\t" + node + "\n");
             for (int i = 0; i < node; i++) {
-                if (i == client.getSource().getId() || i == client.getDestination().getId()) {
+                for(int j=0; j<sourceCluster.size(); j++){
+                    if(i == sourceCluster.get(j)){
+                        fig_SOURCE = true;
+                    }
+                }
+                for(int j=0; j<distCluster.size(); j++){
+                    if(i == distCluster.get(j)){
+                        fig_DIST = true;
+                    }
+                }
+                if (fig_SOURCE || fig_DIST) {
                     writer.write(String.format("%d \"%d\" %.4f %.4f ic Black\n", i + 1, i + 1, beaconList.getBeacon(i).getX(), beaconList.getBeacon(i).getY()));
                 } else {
                     writer.write(String.format("%d \"%d\" %.4f %.4f ic White\n", i + 1, i + 1, beaconList.getBeacon(i).getX(), beaconList.getBeacon(i).getY()));
                 }
+                fig_SOURCE = false;
+                fig_DIST = false;
             }
             writer.write("*Arcs\n*Edges\n");
 
@@ -235,21 +264,47 @@ public class PhysarumSolver {
             }
         }
     }
+    //Excelファイルに流量を出力するメソッド
+    public void output(){
+
+    }
     public void run(Client client, int numLoop){
         int nodeExcept = node - 1;
         int ct = 0;
         double eps = 1e-10;
-        int[] testIter = {10};
+        int testIter = 10;
         int a=0, b, i, j;
         double degeneracyEffect = 1.0;
-        int source = client.getSource().getId();
-        int dist = client.getDestination().getId();
-
+        ArrayList<Integer> sourceCluster = new ArrayList<>();
+        ArrayList<Integer> distCluster = new ArrayList<>();
 
         while (ct < numLoop) {
-            // Kirchhoffの初期設定
-            Q_Kirchhoff.set(source, client.getTheNumberOfUAV());
-            Q_Kirchhoff.set(dist, client.getTheNumberOfUAV() * NEG);
+            //client.getFlow()のサイズだけループ
+            for (int k = 0; k < client.getFlowList().size(); k++) {
+                //sourceとdistを取得
+                Beacon source = client.getFlow(k).getSource();
+                Beacon dist = client.getFlow(k).getDestination();
+                Q_Kirchhoff.set(source.getId(), client.getFlow(k).getTheNumberOfUAV());
+                Q_Kirchhoff.set(dist.getId(), client.getFlow(k).getTheNumberOfUAV() * NEG);
+                sourceCluster.add(source.getId());
+                distCluster.add(dist.getId());
+            }
+
+            for(i=0; i<node; i++){
+                pressureCoefficient.get(i).set(i, 0.0);
+                for(j=0; j< sourceCluster.size(); j++){
+                    for(int k=0; k< distCluster.size(); k++){
+                        if(i == sourceCluster.get(j) || i == distCluster.get(k)){
+                            fig_DIST = true;
+                        }
+                    }
+                }
+                if(!fig_DIST){
+                    Q_Kirchhoff.set(i, 0.0);
+                }
+                fig_DIST = false;
+            }
+
             // 圧力勾配の導出
             for (i = 0; i < node; i++) {
                 for (j = 0; j < node; j++) {
@@ -271,40 +326,8 @@ public class PhysarumSolver {
                 k++;
             }
 
-            // シンクノードを除いた圧力係数行列の計算
-
-            for (i = 0, a = 0; i < node && a < nodeExcept; i++, a++) {
-                if (i == dist && dist != node) { // iがシンクノードである場合
-                    i++; // シンクノードをスキップ
-                }
-                for (j = 0, b = 0; j < node && b < nodeExcept; j++, b++) {
-                    if (j == dist) { // jがシンクノードの場合
-                        j++; // シンクノードをスキップ
-                    }
-                    pressureCoefficient_sinkExcept.get(a).set(b, pressureCoefficient.get(i).get(j)); // シンクノードを除いた圧力係数行列を作成
-                }
-            }
-
-
-            // sinkExcept 配列の準備
-            for (a = 0, i = 0; i < node; i++) {
-                if (i != dist) {
-                    Q_Kirchhoff_sinkExcept.set(a++, Q_Kirchhoff.get(i));
-                }
-            }
-
-            // ICCG法で圧力勾配を計算
-            if (!ICCG.iccg(pressureCoefficient_sinkExcept, Q_Kirchhoff_sinkExcept, P_tubePressure_sinkExcept, nodeExcept, testIter, new double[]{eps})) {
+            if(BiCGSTAB.BiCGSTAB(pressureCoefficient, Q_Kirchhoff, P_tubePressure, node, testIter, eps) == 0){
                 break;
-            }
-
-            // 圧力値の反映
-            for (a = 0, i = 0; i < node; i++) {
-                if (i == dist) {
-                    P_tubePressure.set(i, 0.0);
-                } else {
-                    P_tubePressure.set(i, P_tubePressure_sinkExcept.get(a++));
-                }
             }
 
             // 流量の計算
@@ -329,9 +352,16 @@ public class PhysarumSolver {
             for (i = 0; i < node; i++) {
                 for (j = 0; j < node; j++) {
                     if (link.get(i).get(j).getL_tubeLength() != INF) {
-                        double deltaThickness = (Q_tubeFlow_sigmoidOutput.get(i).get(j) - (degeneracyEffect * link.get(i).get(j).getD_tubeThickness())) * DELTA_TIME;
+                        double deltaThickness = (Math.abs(link.get(i).get(j).getQ_tubeFlow()) - (degeneracyEffect * link.get(i).get(j).getD_tubeThickness())) * DELTA_TIME;
                         D_tubeThickness_deltaT.get(i).set(j, deltaThickness);
-                        link.get(i).get(j).setD_tubeThickness(link.get(i).get(j).getD_tubeThickness() + deltaThickness);
+                    }
+                }
+            }
+
+            for(i=0; i<node; i++){
+                for(j=0; j<node; j++){
+                    {
+                        link.get(i).get(j).setD_tubeThickness(link.get(i).get(j).getD_tubeThickness() + (D_tubeThickness_deltaT.get(i).get(j)) * Math.tanh((link.get(i).get(j).getCapacity() - Math.abs(link.get(i).get(j).getQ_tubeFlow())) * coefficient_tanh));
                     }
                 }
             }

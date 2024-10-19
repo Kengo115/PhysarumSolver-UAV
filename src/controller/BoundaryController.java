@@ -18,6 +18,7 @@ public class BoundaryController {
     static PhysarumSolver solver;
     static Client client;
     static ClientController clientController;
+    ArrayList<Flow> flow;
 
     String filePath = "src/result/practice.net";
 
@@ -42,17 +43,27 @@ public class BoundaryController {
     }
 
     //クライアントを生成する関数
-    public Client createClient(){
+    public Client createClient() {
         Random random = new Random();
-        int sourceId = random.nextInt(nodeNum);
-        int destinationId = random.nextInt(nodeNum);
-        while (sourceId == destinationId){
-            destinationId = random.nextInt(nodeNum);
+        int flowNum;
+        do {
+            flowNum = random.nextInt(2);
+        } while (flowNum == 0);
+
+        for (int i = 0; i < flowNum; i++) {
+            int sourceId = random.nextInt(nodeNum);
+            int destinationId = random.nextInt(nodeNum);
+            while (sourceId == destinationId) {
+                destinationId = random.nextInt(nodeNum);
+            }
+            Beacon source = beaconCluster.getBeacon(sourceId);
+            Beacon destination = beaconCluster.getBeacon(destinationId);
+            int uavNum = random.nextInt(10);
+            //flowListにsource, destination, uavNumを格納
+            flow.add(new Flow(source, destination, uavNum));
         }
-        Beacon source = beaconCluster.getBeacon(sourceId);
-        Beacon destination = beaconCluster.getBeacon(destinationId);
-        int uavNum = random.nextInt(10);
-        Client client = new Client(source, destination, uavNum);
+
+        Client client = new Client(flow);
         clientController.addClient(client);
 
         return client;

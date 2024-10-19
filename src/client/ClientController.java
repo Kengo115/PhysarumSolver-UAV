@@ -2,7 +2,7 @@ package client;
 
 import java.util.ArrayList;
 
-public class ClientController {
+public class   ClientController {
     static private ArrayList<Client> clientList;
     //クライアントをコントローラに追加する
     public void addClient(Client client){

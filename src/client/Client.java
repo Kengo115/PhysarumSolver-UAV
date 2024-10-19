@@ -5,26 +5,26 @@ import item.*;
 import java.util.ArrayList;
 
 public class Client {
-    private Beacon source;
-    private Beacon destination;
-    private double theNumberOfUAV;
-    private ArrayList<Uav> uavList;
+    private ArrayList<Flow> flow;
+
     private int finishFlyingCounter = 0;
 
-    public Client(Beacon source, Beacon destination, int TheNumberOfUAV) {
-        this.source = source;
-        this.destination = destination;
-        this.theNumberOfUAV = TheNumberOfUAV;
-        uavList = new ArrayList<>(TheNumberOfUAV);
-        createUav();
+    public Client(ArrayList<Flow> flow) {
+        this.flow = flow;
+        for(Flow f : flow) {
+            createUav(f);
+        }
     }
 
     //UAV数だけUAVを生成
-    public void createUav() {
-        for (int i = 0; i < theNumberOfUAV; i++) {
-            Uav uav = new Uav(1, source.getX(), source.getY(), i, source, destination);
+    public void createUav(Flow flow) {
+        ArrayList<Uav> uavList= new ArrayList<>((int) flow.getTheNumberOfUAV());
+        //UAV数だけUAVを生成
+        for (int i = 0; i < flow.getTheNumberOfUAV(); i++) {
+            Uav uav = new Uav(1, flow.getSource().getX(), flow.getSource().getY(), i, flow.getSource(), flow.getDestination());
             uavList.add(uav);
         }
+        flow.setUavList(uavList);
     }
 
     public int getFinishFlyingCounter() {
@@ -39,15 +39,13 @@ public class Client {
         finishFlyingCounter++;
     }
 
-    public Beacon getSource() {
-        return source;
+    public ArrayList<Flow> getFlowList() {
+        return flow;
     }
 
-    public Beacon getDestination() {
-        return destination;
+    //要素数番目のFlowを返す
+    public Flow getFlow(int i) {
+        return flow.get(i);
     }
 
-    public double getTheNumberOfUAV() {
-        return theNumberOfUAV;
-    }
 }
