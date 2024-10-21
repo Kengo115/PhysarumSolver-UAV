@@ -1,4 +1,5 @@
 package controller;
+
 import client.Client;
 import client.ClientController;
 import item.*;
@@ -17,8 +18,8 @@ public class BoundaryController {
     public ArrayList<Beacon> beaconList = new ArrayList<>();
     static PhysarumSolver solver;
     static Client client;
-    static ClientController clientController;
-    ArrayList<Flow> flow;
+    static ClientController clientController = new ClientController();;
+    Flow flow;
 
     String filePath = "src/result/practice.net";
 
@@ -45,31 +46,28 @@ public class BoundaryController {
     //クライアントを生成する関数
     public Client createClient() {
         Random random = new Random();
-        int flowNum;
-        do {
-            flowNum = random.nextInt(2);
-        } while (flowNum == 0);
-
-        for (int i = 0; i < flowNum; i++) {
-            int sourceId = random.nextInt(nodeNum);
-            int destinationId = random.nextInt(nodeNum);
-            while (sourceId == destinationId) {
-                destinationId = random.nextInt(nodeNum);
-            }
-            Beacon source = beaconCluster.getBeacon(sourceId);
-            Beacon destination = beaconCluster.getBeacon(destinationId);
-            int uavNum = random.nextInt(10);
-            //flowListにsource, destination, uavNumを格納
-            flow.add(new Flow(source, destination, uavNum));
+        int sourceId = random.nextInt(nodeNum);
+        int destinationId = random.nextInt(nodeNum);
+        while (sourceId == destinationId) {
+            destinationId = random.nextInt(nodeNum);
         }
+        Beacon source = beaconCluster.getBeacon(sourceId);
+        Beacon destination = beaconCluster.getBeacon(destinationId);
+        int uavNum = random.nextInt(10);
+        while(uavNum == 0){
+            uavNum = random.nextInt(10);
+        }
+        //flowListにsource, destination, uavNumを格納
+        flow = new Flow(source, destination, uavNum);
 
         Client client = new Client(flow);
+        clientController = new ClientController();
         clientController.addClient(client);
 
         return client;
     }
 
-    public void routeRequest(Client client){
+    public void routeRequest(Client client) throws IOException {
         //PSを実行
         solver.nodeConfigureToPajek(filePath, client, beaconCluster);
         solver.run(client, num_loop);
@@ -83,6 +81,8 @@ public class BoundaryController {
 
         try {
             boundaryController.setNetworkTopology();
+            client = boundaryController.createClient();
+            boundaryController.routeRequest(client);
         } catch (IOException e) {
             e.printStackTrace();
         }

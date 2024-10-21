@@ -5,15 +5,14 @@ import item.*;
 import java.util.ArrayList;
 
 public class Client {
-    private ArrayList<Flow> flow;
+    private Flow flow;
 
     private int finishFlyingCounter = 0;
 
-    public Client(ArrayList<Flow> flow) {
+    public Client(Flow flow) {
         this.flow = flow;
-        for(Flow f : flow) {
-            createUav(f);
-        }
+        createUav(flow);
+
     }
 
     //UAV数だけUAVを生成
@@ -39,13 +38,8 @@ public class Client {
         finishFlyingCounter++;
     }
 
-    public ArrayList<Flow> getFlowList() {
+    public Flow getFlow() {
         return flow;
-    }
-
-    //要素数番目のFlowを返す
-    public Flow getFlow(int i) {
-        return flow.get(i);
     }
 
 }

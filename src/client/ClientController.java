@@ -2,8 +2,13 @@ package client;
 
 import java.util.ArrayList;
 
-public class   ClientController {
-    static private ArrayList<Client> clientList;
+public class ClientController {
+    private ArrayList<Client> clientList;
+
+    public ClientController(){
+        clientList = new ArrayList<>();
+    }
+
     //クライアントをコントローラに追加する
     public void addClient(Client client){
         clientList.add(client);

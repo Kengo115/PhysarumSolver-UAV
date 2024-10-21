@@ -1,15 +1,14 @@
 package server;
+
 import client.Client;
 import client.ClientController;
 import item.Beacon;
 import item.BeaconCluster;
-import item.Flow;
 import item.Link;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 public class PhysarumSolver {
@@ -53,6 +52,10 @@ public class PhysarumSolver {
 
     private Client client;
     private ClientController clientController;
+    private BeaconCluster beaconCluster;
+    ArrayList<Integer> sourceCluster = new ArrayList<>();
+    ArrayList<Integer> distCluster = new ArrayList<>();
+
 
 
     public PhysarumSolver(int node) {
@@ -144,6 +147,7 @@ public class PhysarumSolver {
     // nodeConfigureメソッドの追加
     public void setLink(int node, BeaconCluster beaconList){
         this.node = node;
+        this.beaconCluster = beaconList;
         double maxDistance = Math.sqrt(2);  // 最大距離 sqrt(2)
 
         for (int i = 0; i < node; i++) {
@@ -171,17 +175,14 @@ public class PhysarumSolver {
 
     public void nodeConfigureToPajek(String NET_file, Client client, BeaconCluster beaconList) {
         double maxDistance = Math.sqrt(2);  // 最大距離 sqrt(2)
-        ArrayList<Integer> sourceCluster = new ArrayList<>();
-        ArrayList<Integer> distCluster = new ArrayList<>();
 
-        for (int k = 0; k < client.getFlowList().size(); k++) {
-            //sourceとdistを取得
-            Beacon source = client.getFlow(k).getSource();
-            Beacon dist = client.getFlow(k).getDestination();
+        //sourceとdistを取得
+        Beacon source = client.getFlow().getSource();
+        Beacon dist = client.getFlow().getDestination();
 
-            sourceCluster.add(source.getId());
-            distCluster.add(dist.getId());
-        }
+        sourceCluster.add(source.getId());
+        distCluster.add(dist.getId());
+
 
         // ファイル出力処理
         try (FileWriter writer = new FileWriter(new File(NET_file))) {
@@ -231,24 +232,27 @@ public class PhysarumSolver {
     }
 
     // setTopologyColorメソッドの追加
-    public void setTopologyColor(Beacon SOURCE, Beacon DIST, double eps, double Q_allFlow, int ct) throws IOException {
+    public void setTopologyColor(Client client, double eps, double Q_allFlow, int ct) throws IOException {
         String filename = "src/result/test_topology_" + (ct + 1) + ".net";
+        Beacon source = client.getFlow().getSource();
+        Beacon dist = client.getFlow().getDestination();
+
         try (FileWriter writer = new FileWriter(filename)) {
             writer.write("*Vertices\t" + node + "\n");
             for (int i = 0; i < node; i++) {
-                if (i == SOURCE.getId() || i == DIST.getId()) {
-                    writer.write(String.format("%d \"%d\" %.4f %.4f ic Black\n", i + 1, i + 1, x_coordinate.get(i), y_coordinate.get(i)));
+                if (i == source.getId() || i == dist.getId()) {
+                    writer.write(String.format("%d \"%d\" %.4f %.4f ic Black\n", i + 1, i + 1, source.getX(), source.getY()));
                 } else {
-                    writer.write(String.format("%d \"%d\" %.4f %.4f ic White\n", i + 1, i + 1, x_coordinate.get(i), y_coordinate.get(i)));
+                    writer.write(String.format("%d \"%d\" %.4f %.4f ic White\n", i + 1, i + 1, beaconCluster.getBeacon(i).getX(), beaconCluster.getBeacon(i).getY()));
                 }
             }
             writer.write("*Arcs\n*Edges\n");
 
             for (int i = 0; i < node; i++) {
                 for (int j = 0; j < node; j++) {
-                    if (link.get(i).get(j).getL_tubeLength() != INF){//L_tubeLength.get(i).get(j) != INF) {
-                        double flow = link.get(i).get(j).getQ_tubeFlow();//Q_tubeFlow.get(i).get(j);
-                        if (0 < link.get(i).get(j).getDistance() && link.get(i).get(j).getDistance() <= Math.sqrt(2)) {//if (0 < node_distance.get(i).get(j) && node_distance.get(i).get(j) <= Math.sqrt(2))
+                    if (link.get(i).get(j).getL_tubeLength() != INF){
+                        double flow = link.get(i).get(j).getQ_tubeFlow();
+                        if (0 < link.get(i).get(j).getDistance() && link.get(i).get(j).getDistance() <= Math.sqrt(2)) {
                             if (flow > 0 && flow <= eps) {
                                 // Small flow, no color
                             } else if (flow > eps && flow <= THRESHOLD_1) {
@@ -268,27 +272,23 @@ public class PhysarumSolver {
     public void output(){
 
     }
-    public void run(Client client, int numLoop){
+    public void run(Client client, int numLoop) throws IOException {
         int nodeExcept = node - 1;
         int ct = 0;
         double eps = 1e-10;
         int testIter = 10;
         int a=0, b, i, j;
         double degeneracyEffect = 1.0;
-        ArrayList<Integer> sourceCluster = new ArrayList<>();
-        ArrayList<Integer> distCluster = new ArrayList<>();
 
         while (ct < numLoop) {
-            //client.getFlow()のサイズだけループ
-            for (int k = 0; k < client.getFlowList().size(); k++) {
-                //sourceとdistを取得
-                Beacon source = client.getFlow(k).getSource();
-                Beacon dist = client.getFlow(k).getDestination();
-                Q_Kirchhoff.set(source.getId(), client.getFlow(k).getTheNumberOfUAV());
-                Q_Kirchhoff.set(dist.getId(), client.getFlow(k).getTheNumberOfUAV() * NEG);
-                sourceCluster.add(source.getId());
-                distCluster.add(dist.getId());
-            }
+            //sourceとdistを取得
+            Beacon source = client.getFlow().getSource();
+            Beacon dist = client.getFlow().getDestination();
+            Q_Kirchhoff.set(source.getId(), client.getFlow().getTheNumberOfUAV());
+            Q_Kirchhoff.set(dist.getId(), client.getFlow().getTheNumberOfUAV() * NEG);
+            sourceCluster.add(source.getId());
+            distCluster.add(dist.getId());
+
 
             for(i=0; i<node; i++){
                 pressureCoefficient.get(i).set(i, 0.0);
@@ -368,9 +368,9 @@ public class PhysarumSolver {
             // 結果のプロット
             if ((ct + 1) % PLOT == 0) {
                 System.out.println("Iteration: " + (ct+1));
-                /**
-                setTopologyColor(node, source, dist, eps, Q_allFlow, ct);
-                 */
+
+                setTopologyColor(client, eps, client.getFlow().getTheNumberOfUAV(), ct);
+
             }
 
             ct++;
