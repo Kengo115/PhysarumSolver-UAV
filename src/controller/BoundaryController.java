@@ -11,7 +11,7 @@ import java.util.Random;
 
 
 public class BoundaryController {
-    private static int num_loop = 2000;
+    private static int num_loop = 1000;
     private static int nodeNum;
     //ビーコンクラスタークラスを生成
     static BeaconCluster beaconCluster;
@@ -46,17 +46,25 @@ public class BoundaryController {
     //クライアントを生成する関数
     public Client createClient() {
         Random random = new Random();
+        /**
+        //ランダムにsourceId, destinationIdを生成
         int sourceId = random.nextInt(nodeNum);
         int destinationId = random.nextInt(nodeNum);
         while (sourceId == destinationId) {
             destinationId = random.nextInt(nodeNum);
         }
+         */
+        int sourceId = 0;
+        int destinationId = 5;
         Beacon source = beaconCluster.getBeacon(sourceId);
         Beacon destination = beaconCluster.getBeacon(destinationId);
+        /**
         int uavNum = random.nextInt(10);
         while(uavNum == 0){
             uavNum = random.nextInt(10);
         }
+         */
+        int uavNum = 10;
         //flowListにsource, destination, uavNumを格納
         flow = new Flow(source, destination, uavNum);
 
@@ -75,7 +83,7 @@ public class BoundaryController {
 
     public static void main(String[] args) {
         BoundaryController boundaryController = new BoundaryController();
-        boundaryController.setNodeNum(10);
+        boundaryController.setNodeNum(6);
         solver = new PhysarumSolver(nodeNum);
         beaconCluster = new BeaconCluster(nodeNum);
 

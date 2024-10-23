@@ -13,12 +13,21 @@ public class BeaconCluster {
         this.beaconNum = beaconNum;
         beaconList = new ArrayList<>(beaconNum);
 
+        /**
         Random random = new Random();
-        //指定された数だけBeaconを生成
+        //指定された数だけランダムにBeaconを生成
         for (int i = 0; i < beaconNum; i++) {
             Beacon beacon = new Beacon(random.nextDouble(), random.nextDouble(), i);
             beaconList.add(beacon);
         }
+         */
+        //手動で座標位置を入力
+        beaconList.add(new Beacon(0.1, 0.7, 0));
+        beaconList.add(new Beacon(0.1, 0.4, 1));
+        beaconList.add(new Beacon(0.5, 0.1, 2));
+        beaconList.add(new Beacon(0.5, 0.4, 3));
+        beaconList.add(new Beacon(0.5, 0.7, 4));
+        beaconList.add(new Beacon(0.9, 0.4, 5));
     }
 
     //Beaconを返す

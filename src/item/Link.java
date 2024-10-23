@@ -62,6 +62,10 @@ public class Link {
     public Beacon getBeacon2() {
         return beacon2;
     }
+    public void setCapacity(double capacity) {
+        this.capacity = capacity;
+    }
+
     //容量を返す
     public double getCapacity() {
         return capacity;

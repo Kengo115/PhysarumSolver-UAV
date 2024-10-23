@@ -18,7 +18,7 @@ public class PhysarumSolver {
     private static final double GAMMA = 1.5;
     private static final double DELTA_TIME = 0.01;
     private static final int PLOT = 1;
-    private static final double INIT_THICKNESS = 1.0;
+    private static final double INIT_THICKNESS = 0.5;
     private static final double INIT_LENGTH = 1.0;
     private static final double INIT_RATE = 100.0;
     private static final double THRESHOLD_1 = 0.5;
@@ -148,6 +148,8 @@ public class PhysarumSolver {
     public void setLink(int node, BeaconCluster beaconList){
         this.node = node;
         this.beaconCluster = beaconList;
+        /**
+        //nodeDistanceによってリンクを決定
         double maxDistance = Math.sqrt(2);  // 最大距離 sqrt(2)
 
         for (int i = 0; i < node; i++) {
@@ -163,14 +165,98 @@ public class PhysarumSolver {
 
                     if(distance > maxDistance) {
                         link.get(i).get(j).setL_tubeLength(INF);
+                    }else {
+                        link.get(i).get(j).setLink(beaconList.getBeacon(i), beaconList.getBeacon(j), 20);
+                        link.get(i).get(j).setD_tubeThickness(INIT_THICKNESS);
+                        link.get(i).get(j).setL_tubeLength(INIT_LENGTH);
+                        link.get(i).get(j).setCongestionRate(INIT_RATE);
                     }
-                    link.get(i).get(j).setLink(beaconList.getBeacon(i), beaconList.getBeacon(j), 20);
-                    link.get(i).get(j).setD_tubeThickness(INIT_THICKNESS);
-                    link.get(i).get(j).setL_tubeLength(INIT_LENGTH);
-                    link.get(i).get(j).setCongestionRate(INIT_RATE);
                 }
             }
         }
+         */
+
+        //手動でリンクを決定
+        for(int i=0; i<node; i++){
+            for(int j=0; j<node; j++){
+                link.get(i).get(j).setD_tubeThickness(0.0);
+                link.get(i).get(j).setL_tubeLength(INF);
+                link.get(i).get(j).setDistance(Math.sqrt(Math.pow(beaconList.getBeacon(i).getX() - beaconList.getBeacon(j).getX(), 2) + Math.pow(beaconList.getBeacon(i).getY() - beaconList.getBeacon(j).getY(), 2)));
+            }
+        }
+
+        link.get(0).get(1).setLink(beaconList.getBeacon(0), beaconList.getBeacon(1), 10);
+        link.get(0).get(1).setD_tubeThickness(INIT_THICKNESS);
+        link.get(0).get(1).setL_tubeLength(2);
+        link.get(0).get(1).setCongestionRate(INIT_RATE);
+        link.get(1).get(0).setLink(beaconList.getBeacon(1), beaconList.getBeacon(0), 10);
+        link.get(1).get(0).setD_tubeThickness(INIT_THICKNESS);
+        link.get(1).get(0).setL_tubeLength(2);
+        link.get(1).get(0).setCongestionRate(INIT_RATE);
+
+        link.get(0).get(4).setLink(beaconList.getBeacon(0), beaconList.getBeacon(4), 20);
+        link.get(0).get(4).setD_tubeThickness(INIT_THICKNESS);
+        link.get(0).get(4).setL_tubeLength(2);
+        link.get(0).get(4).setCongestionRate(INIT_RATE);
+        link.get(4).get(0).setLink(beaconList.getBeacon(4), beaconList.getBeacon(0), 20);
+        link.get(4).get(0).setD_tubeThickness(INIT_THICKNESS);
+        link.get(4).get(0).setL_tubeLength(2);
+        link.get(4).get(0).setCongestionRate(INIT_RATE);
+
+        link.get(1).get(2).setLink(beaconList.getBeacon(1), beaconList.getBeacon(2), 30);
+        link.get(1).get(2).setD_tubeThickness(INIT_THICKNESS);
+        link.get(1).get(2).setL_tubeLength(3);
+        link.get(1).get(2).setCongestionRate(INIT_RATE);
+        link.get(2).get(1).setLink(beaconList.getBeacon(2), beaconList.getBeacon(1), 30);
+        link.get(2).get(1).setD_tubeThickness(INIT_THICKNESS);
+        link.get(2).get(1).setL_tubeLength(3);
+        link.get(2).get(1).setCongestionRate(INIT_RATE);
+
+        link.get(1).get(3).setLink(beaconList.getBeacon(1), beaconList.getBeacon(3), 20);
+        link.get(1).get(3).setD_tubeThickness(INIT_THICKNESS);
+        link.get(1).get(3).setL_tubeLength(2);
+        link.get(1).get(3).setCongestionRate(INIT_RATE);
+        link.get(3).get(1).setLink(beaconList.getBeacon(3), beaconList.getBeacon(1), 20);
+        link.get(3).get(1).setD_tubeThickness(INIT_THICKNESS);
+        link.get(3).get(1).setL_tubeLength(2);
+        link.get(3).get(1).setCongestionRate(INIT_RATE);
+
+        link.get(2).get(3).setLink(beaconList.getBeacon(2), beaconList.getBeacon(3), 10);
+        link.get(2).get(3).setD_tubeThickness(INIT_THICKNESS);
+        link.get(2).get(3).setL_tubeLength(2);
+        link.get(2).get(3).setCongestionRate(INIT_RATE);
+        link.get(3).get(2).setLink(beaconList.getBeacon(3), beaconList.getBeacon(2), 10);
+        link.get(3).get(2).setD_tubeThickness(INIT_THICKNESS);
+        link.get(3).get(2).setL_tubeLength(2);
+        link.get(3).get(2).setCongestionRate(INIT_RATE);
+
+        link.get(2).get(5).setLink(beaconList.getBeacon(2), beaconList.getBeacon(5), 20);
+        link.get(2).get(5).setD_tubeThickness(INIT_THICKNESS);
+        link.get(2).get(5).setL_tubeLength(3);
+        link.get(2).get(5).setCongestionRate(INIT_RATE);
+        link.get(5).get(2).setLink(beaconList.getBeacon(5), beaconList.getBeacon(2), 20);
+        link.get(5).get(2).setD_tubeThickness(INIT_THICKNESS);
+        link.get(5).get(2).setL_tubeLength(3);
+        link.get(5).get(2).setCongestionRate(INIT_RATE);
+
+        link.get(3).get(5).setLink(beaconList.getBeacon(3), beaconList.getBeacon(5), 20);
+        link.get(3).get(5).setD_tubeThickness(INIT_THICKNESS);
+        link.get(3).get(5).setL_tubeLength(2);
+        link.get(3).get(5).setCongestionRate(INIT_RATE);
+        link.get(5).get(3).setLink(beaconList.getBeacon(5), beaconList.getBeacon(3), 20);
+        link.get(5).get(3).setD_tubeThickness(INIT_THICKNESS);
+        link.get(5).get(3).setL_tubeLength(2);
+        link.get(5).get(3).setCongestionRate(INIT_RATE);
+
+        link.get(4).get(5).setLink(beaconList.getBeacon(4), beaconList.getBeacon(5), 20);
+        link.get(4).get(5).setD_tubeThickness(INIT_THICKNESS);
+        link.get(4).get(5).setL_tubeLength(3);
+        link.get(4).get(5).setCongestionRate(INIT_RATE);
+        link.get(5).get(4).setLink(beaconList.getBeacon(5), beaconList.getBeacon(4), 20);
+        link.get(5).get(4).setD_tubeThickness(INIT_THICKNESS);
+        link.get(5).get(4).setL_tubeLength(3);
+        link.get(5).get(4).setCongestionRate(INIT_RATE);
+
     }
 
     public void nodeConfigureToPajek(String NET_file, Client client, BeaconCluster beaconList) {
@@ -208,6 +294,8 @@ public class PhysarumSolver {
             }
             writer.write("*Arcs\n*Edges\n");
 
+            /**
+            //nodeDistanceで接続を決定
             for (int i = 0; i < node; i++) {
                 for (int j = 0; j < node; j++) {
 
@@ -226,14 +314,22 @@ public class PhysarumSolver {
                     }
                 }
             }
+             */
+            for(int i = 0; i < node; i++){
+                for(int j = 0; j < node; j++){
+                    if(i != j && link.get(i).get(j).getL_tubeLength() != INF){
+                        writer.write(String.format("%d %d 1\n", i + 1, j + 1));
+                    }
+                }
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     // setTopologyColorメソッドの追加
-    public void setTopologyColor(Client client, double eps, double Q_allFlow, int ct) throws IOException {
-        String filename = "src/result/test_topology_" + (ct + 1) + ".net";
+    public void outputToPajek(Client client, double eps, double Q_allFlow, int ct) throws IOException {
+        String filename = "src/result/pajek/test_topology_" + (ct + 1) + ".net";
         Beacon source = client.getFlow().getSource();
         Beacon dist = client.getFlow().getDestination();
 
@@ -268,10 +364,51 @@ public class PhysarumSolver {
             }
         }
     }
-    //Excelファイルに流量を出力するメソッド
-    public void output(){
-
+    //Excelファイルに各リンクの流量を出力するメソッド
+    public void outputToExcel(Client client, int ct) throws IOException {
+        String filename = "src/result/excel/test_topology_" + (ct + 1) + ".csv";
+        
+        try (FileWriter writer = new FileWriter(filename)) {
+            writer.write("source,destination,flow\n");
+            for (int i = 0; i < node; i++) {
+                for (int j = 0; j < node; j++) {
+                    if (link.get(i).get(j).getL_tubeLength() != INF) {
+                        writer.write(String.format("%d,%d,%.4f\n", i, j, link.get(i).get(j).getQ_tubeFlow()));
+                    }
+                }
+            }
+        }
     }
+    //txtファイルに管の長さ，管の太さ，管の容量を出力するメソッド
+    public void outputToTxt(Client client, int ct) throws IOException {
+        String filename = "src/result/txt/test_topology_" + (ct + 1) + ".txt";
+
+        try (FileWriter writer = new FileWriter(filename)) {
+            //要求uav台数，出発ノード，到着ノードを１行目に出力
+            writer.write(String.format("%.1f,%d,%d\n", client.getFlow().getTheNumberOfUAV(), client.getFlow().getSource().getId(), client.getFlow().getDestination().getId()));
+            writer.write("source,destination,length,thickness,capacity\n");
+            for (int i = 0; i < node; i++) {
+                for (int j = 0; j < node; j++) {
+                    if (link.get(i).get(j).getL_tubeLength() != INF) {
+                        writer.write(String.format("%d,%d,%.4f,%.4f,%.4f\n", i, j, link.get(i).get(j).getL_tubeLength(), link.get(i).get(j).getD_tubeThickness(), link.get(i).get(j).getCapacity()));
+                    }
+                }
+            }
+        }
+    }
+
+    //管の容量を更新するメソッド」
+    public void updateCapacity() {
+        for (int i = 0; i < node; i++) {
+            for (int j = 0; j < node; j++) {
+                if (link.get(i).get(j).getL_tubeLength() != INF) {
+                    link.get(i).get(j).setCapacity(link.get(i).get(j).getD_tubeThickness() * link.get(i).get(j).getL_tubeLength());
+                }
+            }
+        }
+    }
+
+    //PSを実行するメソッド
     public void run(Client client, int numLoop) throws IOException {
         int nodeExcept = node - 1;
         int ct = 0;
@@ -368,34 +505,12 @@ public class PhysarumSolver {
             // 結果のプロット
             if ((ct + 1) % PLOT == 0) {
                 System.out.println("Iteration: " + (ct+1));
-
-                setTopologyColor(client, eps, client.getFlow().getTheNumberOfUAV(), ct);
-
+                outputToPajek(client, eps, client.getFlow().getTheNumberOfUAV(), ct);
+                outputToExcel(client, ct);
+                outputToTxt(client, ct);
             }
 
             ct++;
         }
     }
-    /**
-    public static void main(String[] args) throws IOException {
-        Scanner scanner = new Scanner(System.in);
-
-        // ノード数とファイル入力（仮）
-        System.out.print("ノード数を入力してください: ");
-        int node = scanner.nextInt();
-        System.out.print("流量を入力してください: ");
-        double Q_allFlow = scanner.nextDouble();
-        System.out.print("反復回数を入力してください: ");
-        int numLoop = scanner.nextInt();
-
-        // ファイルパスの設定
-        String filePath = "src/result/practice.net";
-
-        PhysarumSolver solver = new PhysarumSolver(node);
-
-        solver.run(node, 0, 1, Q_allFlow, numLoop, filePath);
-
-        scanner.close();
-    }
-     */
 }
