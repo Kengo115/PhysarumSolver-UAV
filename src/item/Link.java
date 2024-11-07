@@ -6,7 +6,7 @@ public class Link {
     private Beacon beacon2;
     private double distance;
     private double capacity;
-    private double flyingUAV;
+    private int flyingUAV;
     private double congestionRate;
     // リンクの基本パラメータ
     private double Q_Kirchhoff;
@@ -37,6 +37,9 @@ public class Link {
     }
     public void setCongestionRate(double congestionRate) {
         this.congestionRate = congestionRate;
+    }
+    public void setFlyingUAV(int flyingUAV) {
+        this.flyingUAV = flyingUAV;
     }
 
     public double getP_tubePressure() {

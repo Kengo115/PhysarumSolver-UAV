@@ -22,8 +22,8 @@ public class BeaconCluster {
         }
          */
         //手動で座標位置を入力
-        beaconList.add(new Beacon(0.1, 0.7, 0));
-        beaconList.add(new Beacon(0.1, 0.4, 1));
+        beaconList.add(new Beacon(0.1, 0.4, 0));
+        beaconList.add(new Beacon(0.1, 0.7, 1));
         beaconList.add(new Beacon(0.5, 0.1, 2));
         beaconList.add(new Beacon(0.5, 0.4, 3));
         beaconList.add(new Beacon(0.5, 0.7, 4));

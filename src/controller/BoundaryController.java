@@ -11,7 +11,7 @@ import java.util.Random;
 
 
 public class BoundaryController {
-    private static int num_loop = 1000;
+    private static int num_loop = 270;
     private static int nodeNum;
     //ビーコンクラスタークラスを生成
     static BeaconCluster beaconCluster;
@@ -64,7 +64,7 @@ public class BoundaryController {
             uavNum = random.nextInt(10);
         }
          */
-        int uavNum = 10;
+        int uavNum = 40;
         //flowListにsource, destination, uavNumを格納
         flow = new Flow(source, destination, uavNum);
 
@@ -75,6 +75,22 @@ public class BoundaryController {
         return client;
     }
 
+    public Client createClient2(){
+        int sourceId = 2;
+        int destinationId = 4;
+        Beacon source = beaconCluster.getBeacon(sourceId);
+        Beacon destination = beaconCluster.getBeacon(destinationId);
+
+        int uavNum = 20;
+        //flowListにsource, destination, uavNumを格納
+        flow = new Flow(source, destination, uavNum);
+
+        Client client = new Client(flow);
+        clientController = new ClientController();
+        clientController.addClient(client);
+
+        return client;
+    }
     public void routeRequest(Client client) throws IOException {
         //PSを実行
         solver.nodeConfigureToPajek(filePath, client, beaconCluster);

@@ -1,15 +1,19 @@
 package item;
 
+import java.util.ArrayList;
+
 public class Uav {
-    private int speed;
+    private double speed;
     private double x;
     private double y;
     private int id;
     private Beacon Source;
     private Beacon Destination;
+    private UAVTimer uavTimer = new UAVTimer();
+    private ArrayList<Integer> path;
 
     //コンストラクタ
-    public Uav(int speed, double x, double y, int id, Beacon Source, Beacon Destination) {
+    public Uav(double speed, double x, double y, int id, Beacon Source, Beacon Destination) {
         this.speed = speed;
         this.x = x;
         this.y = y;
@@ -17,9 +21,39 @@ public class Uav {
         this.Source = Source;
         this.Destination = Destination;
     }
+    public void setPath(ArrayList<Integer> path) {
+        this.path = path;
+    }
+
+    public ArrayList<Integer> getPath() {
+        return path;
+    }
+
+    public void startTimer(){
+        uavTimer.start();
+    }
+
+    public void stopTimer(){
+        uavTimer.stop();
+    }
+
+    public long getFlightTime(){
+        return uavTimer.getFlightTime();
+    }
+
+    public void resetTimer() {
+        uavTimer.reset();
+    }
+
+    public void cancelTimer() {
+        uavTimer.cancel();
+    }
+
+
+
 
     //速度を返す
-    public int getSpeed() {
+    public double getSpeed() {
         return speed;
     }
     //x座標を返す

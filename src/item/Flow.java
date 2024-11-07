@@ -21,6 +21,10 @@ public class Flow {
     public ArrayList<Uav> getUavList() {
         return uavList;
     }
+    //i番目のuavを返す
+    public Uav getUav(int i) {
+        return uavList.get(i);
+    }
 
     public Beacon getSource() {
         return source;

@@ -3,9 +3,11 @@ package client;
 import item.*;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 public class Client {
     private Flow flow;
+    private UAVTimer uavTimer;
 
     private int finishFlyingCounter = 0;
 
@@ -20,12 +22,19 @@ public class Client {
         ArrayList<Uav> uavList= new ArrayList<>((int) flow.getTheNumberOfUAV());
         //UAV数だけUAVを生成
         for (int i = 0; i < flow.getTheNumberOfUAV(); i++) {
-            Uav uav = new Uav(1, flow.getSource().getX(), flow.getSource().getY(), i, flow.getSource(), flow.getDestination());
+            Random random = new Random();
+            double speed = 8 + (random.nextDouble() * 8);  // 8~16の範囲に設定
+            Uav uav = new Uav(speed, flow.getSource().getX(), flow.getSource().getY(), i, flow.getSource(), flow.getDestination());
             uavList.add(uav);
         }
+
         flow.setUavList(uavList);
     }
 
+    public void startTimer(){
+        uavTimer = new UAVTimer();
+        uavTimer.start();
+    }
     public int getFinishFlyingCounter() {
         return finishFlyingCounter;
     }
