@@ -1,25 +1,61 @@
 package item;
 
 public class Link {
+    //beacon1-beacon2のリンク情報
     private Beacon beacon1;
     private Beacon beacon2;
+    private double distance;
     private double capacity;
-    private double flyingUAV;
+    private int flyingUAV;
     private double congestionRate;
-    //管の太さ
+    // リンクの基本パラメータ
+    private double Q_Kirchhoff;
+    private double P_tubePressure;
+    private double Q_tubeFlow;
     private double D_tubeThickness;
-    //管の長さ
     private double L_tubeLength;
 
-    //コンストラクタ
-    public Link(Beacon beacon1, Beacon beacon2, double capacity, double flyingUAV, double congestionRate, double D_tubeThickness, double L_tubeLength) {
+
+    public void setLink(Beacon beacon1, Beacon beacon2, double capacity) {
         this.beacon1 = beacon1;
         this.beacon2 = beacon2;
         this.capacity = capacity;
-        this.flyingUAV = flyingUAV;
-        this.congestionRate = congestionRate;
+    }
+
+
+    public void setDistance(double distance) {
+        this.distance = distance;
+    }
+    public void setD_tubeThickness(double D_tubeThickness) {
         this.D_tubeThickness = D_tubeThickness;
+    }
+    public void setL_tubeLength(double L_tubeLength) {
         this.L_tubeLength = L_tubeLength;
+    }
+    public void setQ_tubeFlow(double q_tubeFlow) {
+        Q_tubeFlow = q_tubeFlow;
+    }
+    public void setCongestionRate(double congestionRate) {
+        this.congestionRate = congestionRate;
+    }
+    public void setFlyingUAV(int flyingUAV) {
+        this.flyingUAV = flyingUAV;
+    }
+
+    public double getP_tubePressure() {
+        return P_tubePressure;
+    }
+
+    public void setP_tubePressure(double p_tubePressure) {
+        P_tubePressure = p_tubePressure;
+    }
+
+    public double getQ_Kirchhoff() {
+        return Q_Kirchhoff;
+    }
+
+    public void setQ_Kirchhoff(double q_Kirchhoff) {
+        Q_Kirchhoff = q_Kirchhoff;
     }
 
     //接続ビーコンを返す
@@ -29,6 +65,10 @@ public class Link {
     public Beacon getBeacon2() {
         return beacon2;
     }
+    public void setCapacity(double capacity) {
+        this.capacity = capacity;
+    }
+
     //容量を返す
     public double getCapacity() {
         return capacity;
@@ -48,6 +88,14 @@ public class Link {
     //管の長さを返す
     public double getL_tubeLength() {
         return L_tubeLength;
+    }
+
+    public double getDistance() {
+        return distance;
+    }
+
+    public double getQ_tubeFlow() {
+        return Q_tubeFlow;
     }
 
     //混雑率を計算する
