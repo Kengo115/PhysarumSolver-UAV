@@ -10,7 +10,8 @@ public class Uav {
     private Beacon Source;
     private Beacon Destination;
     private UAVTimer uavTimer = new UAVTimer();
-    private ArrayList<Integer> path;
+    private int[] path;
+    private boolean isFlying = false;
 
     //コンストラクタ
     public Uav(double speed, double x, double y, int id, Beacon Source, Beacon Destination) {
@@ -21,15 +22,16 @@ public class Uav {
         this.Source = Source;
         this.Destination = Destination;
     }
-    public void setPath(ArrayList<Integer> path) {
+    public void setPath(int[] path) {
         this.path = path;
     }
 
-    public ArrayList<Integer> getPath() {
+    public int[] getPath() {
         return path;
     }
 
     public void startTimer(){
+        isFlying = true;
         uavTimer.start();
     }
 
@@ -46,10 +48,14 @@ public class Uav {
     }
 
     public void cancelTimer() {
+        isFlying = false;
         uavTimer.cancel();
     }
 
 
+    public boolean getIsFlying() {
+        return isFlying;
+    }
     //速度を返す
     public double getSpeed() {
         return speed;

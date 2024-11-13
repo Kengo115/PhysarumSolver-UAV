@@ -4,29 +4,26 @@ public class Beacon {
     private double x;
     private double y;
     private int id;
-    private double Q_Kirchhoff;
-    private double P_tubePressure;
 
-    //コンストラクタ
-    public Beacon(double x, double y, int id) {
+    public Beacon(double x, double y, int id){
         this.x = x;
         this.y = y;
         this.id = id;
     }
 
-    //x座標を返す
-    public double getX() {
+    public double getX(){
         return x;
     }
-    //y座標を返す
-    public double getY() {
+
+    public double getY(){
         return y;
     }
-    //idを返す
-    public int getId() {
+
+    public int getId(){
         return id;
     }
-    public Beacon getBeacon() {
+
+    public Beacon getBeacon(){
         return this;
     }
 }

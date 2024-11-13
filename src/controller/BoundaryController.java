@@ -7,17 +7,20 @@ import server.PhysarumSolver;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
 
 
 public class BoundaryController {
-    private static int num_loop = 40;
+    private static int num_loop = 1000;
     private static int nodeNum;
     //ビーコンクラスタークラスを生成
     static BeaconCluster beaconCluster;
-    public ArrayList<Beacon> beaconList;
+    public Beacon[] beaconList;
     static PhysarumSolver solver;
     static Client client;
-    static ClientController clientController = new ClientController();;
+    static ClientController clientController = new ClientController();
+    static Queue<Client> passedClient = new LinkedList<>();
     Flow flow;
 
     String filePath = "src/result/practice.net";
@@ -25,7 +28,7 @@ public class BoundaryController {
     //ネットワークトポロジーを設定する関数
     public void setNetworkTopology() throws IOException {
         //ビーコンクラスタークラスを取得
-        beaconList = new ArrayList<>(nodeNum);
+        beaconList = new Beacon[nodeNum];
         beaconList = beaconCluster.getBeaconList();
         //ビーコンの情報を設定
         setLink();
@@ -62,8 +65,8 @@ public class BoundaryController {
     }
 
     public Client createClient2(){
-        int sourceId = 2;
-        int destinationId = 4;
+        int sourceId = 0;
+        int destinationId = 5;
         Beacon source = beaconCluster.getBeacon(sourceId);
         Beacon destination = beaconCluster.getBeacon(destinationId);
 
@@ -80,7 +83,7 @@ public class BoundaryController {
     public void routeRequest(Client client) throws IOException {
         //PSを実行
         solver.nodeConfigureToPajek(filePath, client, beaconCluster);
-        solver.run(client, num_loop);
+        solver.run(client, passedClient, num_loop);
     }
 
     public static void main(String[] args) {
@@ -93,6 +96,11 @@ public class BoundaryController {
             boundaryController.setNetworkTopology();
             client = boundaryController.createClient();
             boundaryController.routeRequest(client);
+            passedClient.add(client);
+            //UAVの飛行を全て終えたクライアントをdequeueする
+            client = boundaryController.createClient2();
+            boundaryController.routeRequest(client);
+            passedClient.add(client);
 
         } catch (IOException e) {
             e.printStackTrace();
