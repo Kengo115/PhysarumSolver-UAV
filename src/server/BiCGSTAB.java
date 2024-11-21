@@ -31,11 +31,6 @@ public class BiCGSTAB {
         double[] t = new double[n];
 
         Arrays.fill(output, 0.0);
-        Arrays.fill(r, 0.0);
-        Arrays.fill(p, 0.0);
-        Arrays.fill(v, 0.0);
-        Arrays.fill(s, 0.0);
-        Arrays.fill(t, 0.0);
 
         BiCGSTABRes(pressCoeff, output, dataAll, r, n);
         double[] r0 = Arrays.copyOf(r, r.length);
@@ -93,7 +88,6 @@ public class BiCGSTAB {
     // BiCGSTABResメソッドの変更：ArrayList -> 配列
     public static void BiCGSTABRes(double[][] A, double[] x, double[] b, double[] r, int n) {
         double[] Ax = new double[n];
-        Arrays.fill(Ax, 0.0);
         matVecMult(A, x, Ax);
         for (int i = 0; i < n; i++) {
             r[i] = b[i] - Ax[i];

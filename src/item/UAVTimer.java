@@ -39,8 +39,18 @@ public class UAVTimer {
     // 飛行時間の取得
     // 飛行時間の取得 (秒単位)
     public long getFlightTime() {
-        return (endTime - startTime) / 1000;
+        long flightTime;
+        if (isTiming) {
+            flightTime = (System.currentTimeMillis() - startTime) / 1000;
+            System.out.println("飛行時間: " + flightTime + "s");
+            return flightTime; // タイマーが動作中の場合の経過時間
+        } else {
+            flightTime = (endTime - startTime) / 1000;
+            System.out.println("飛行時間: " + flightTime + "s");
+            return flightTime; // タイマー停止後の最終飛行時間
+        }
     }
+
 
 
     // タイマーのリセット
@@ -53,6 +63,7 @@ public class UAVTimer {
 
     // タイマーのキャンセル
     public void cancel() {
+        this.stop();
         this.timer.cancel();
         System.out.println("タイマーがキャンセルされました。");
     }

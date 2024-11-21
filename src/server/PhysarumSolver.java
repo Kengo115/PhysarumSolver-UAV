@@ -20,6 +20,7 @@ public class PhysarumSolver {
     private static final double GAMMA = 1.01;
     private static final double DELTA_TIME = 0.01;
     private static final int PLOT = 1;
+    private static final int PLOT_2 = 20;
     private static final double INIT_THICKNESS = 0.5;
     private static final double INIT_LENGTH = 1.0;
     private static final double INIT_RATE = 100.0;
@@ -196,42 +197,42 @@ public class PhysarumSolver {
         link[1][0].setCongestionRate(INIT_RATE);
         adjMatrix[1][0] = 1;
 
-        link[0][2].setLink(beaconList.getBeacon(0), beaconList.getBeacon(4), 30);
+        link[0][2].setLink(beaconList.getBeacon(0), beaconList.getBeacon(2), 30);
         link[0][2].setD_tubeThickness(INIT_THICKNESS);
-        link[0][2].setL_tubeLength(2);
+        link[0][2].setL_tubeLength(3);
         link[0][2].setDistance(2000);
         link[0][2].setCongestionRate(INIT_RATE);
         adjMatrix[0][2] = 1;
 
-        link[2][0].setLink(beaconList.getBeacon(4), beaconList.getBeacon(0), 30);
+        link[2][0].setLink(beaconList.getBeacon(2), beaconList.getBeacon(0), 30);
         link[2][0].setD_tubeThickness(INIT_THICKNESS);
-        link[2][0].setL_tubeLength(2);
+        link[2][0].setL_tubeLength(3);
         link[2][0].setDistance(2000);
         link[2][0].setCongestionRate(INIT_RATE);
         adjMatrix[2][0] = 1;
 
-        link[0][3].setLink(beaconList.getBeacon(1), beaconList.getBeacon(2), 20);
+        link[0][3].setLink(beaconList.getBeacon(0), beaconList.getBeacon(3), 20);
         link[0][3].setD_tubeThickness(INIT_THICKNESS);
         link[0][3].setL_tubeLength(3);
         link[0][3].setDistance(3000);
         link[0][3].setCongestionRate(INIT_RATE);
         adjMatrix[0][3] = 1;
 
-        link[3][0].setLink(beaconList.getBeacon(2), beaconList.getBeacon(1), 20);
+        link[3][0].setLink(beaconList.getBeacon(3), beaconList.getBeacon(0), 20);
         link[3][0].setD_tubeThickness(INIT_THICKNESS);
         link[3][0].setL_tubeLength(3);
         link[3][0].setDistance(3000);
         link[3][0].setCongestionRate(INIT_RATE);
         adjMatrix[3][0] = 1;
 
-        link[1][4].setLink(beaconList.getBeacon(1), beaconList.getBeacon(3), 20);
+        link[1][4].setLink(beaconList.getBeacon(1), beaconList.getBeacon(4), 20);
         link[1][4].setD_tubeThickness(INIT_THICKNESS);
         link[1][4].setL_tubeLength(2);
         link[1][4].setDistance(2000);
         link[1][4].setCongestionRate(INIT_RATE);
         adjMatrix[1][4] = 1;
 
-        link[4][1].setLink(beaconList.getBeacon(3), beaconList.getBeacon(1), 20);
+        link[4][1].setLink(beaconList.getBeacon(4), beaconList.getBeacon(1), 20);
         link[4][1].setD_tubeThickness(INIT_THICKNESS);
         link[4][1].setL_tubeLength(2);
         link[4][1].setDistance(2000);
@@ -252,7 +253,7 @@ public class PhysarumSolver {
         link[3][2].setCongestionRate(INIT_RATE);
         adjMatrix[3][2] = 1;
 
-        link[2][5].setLink(beaconList.getBeacon(2), beaconList.getBeacon(5), 20);
+        link[2][5].setLink(beaconList.getBeacon(2), beaconList.getBeacon(5), 30);
         link[2][5].setD_tubeThickness(INIT_THICKNESS);
         link[2][5].setL_tubeLength(3);
         link[2][5].setDistance(3000);
@@ -392,7 +393,7 @@ public class PhysarumSolver {
         // ディレクトリパスを作成
         String dirPath = "src/result/excel/result" + runCounter;
         // ファイル名を作成
-        String filename = dirPath + "/test_topology_" + (ct + 1) + ".net";
+        String filename = dirPath + "/test_topology_" + (ct + 1) + ".txt";
 
         // Fileオブジェクトでディレクトリの存在を確認・作成
         File dir = new File(dirPath);
@@ -411,12 +412,69 @@ public class PhysarumSolver {
             }
         }
     }
+
+    // 経路ごとのUAV数をExcel形式で出力するメソッド
+    public void outputRouteToExcel(Client client, int ct) throws IOException {
+        // ディレクトリパスを作成
+        String dirPath = "src/result/rute/result" + runCounter;
+        // ファイル名を作成
+        String filename = dirPath + "/test_topology_routes.txt";
+
+        // Fileオブジェクトでディレクトリの存在を確認・作成
+        File dir = new File(dirPath);
+        if (!dir.exists()) {
+            // ディレクトリが存在しない場合は作成
+            dir.mkdirs();
+        }
+
+        // ファイルに追記
+        try (FileWriter writer = new FileWriter(filename, true)) { // true で追記モードに設定
+            // ヘッダーは1回だけ記載されるようにする
+            File file = new File(filename);
+            if (file.length() == 0) { // ファイルが空の場合のみヘッダーを書き込む
+                writer.write("ct,v0->v1->v4->v5,v0->v2->v3->v5,v0->v2->v5,v0->v3->v5\n");
+            }
+            if(runCounter == 0 || runCounter == 1) {
+                if (file.length() == 0) { // ファイルが空の場合のみヘッダーを書き込む
+                    writer.write("ct,v0->v1->v4->v5,v0->v2->v3->v5,v0->v2->v5,v0->v3->v5\n");
+                }
+                double route1 = Math.min(link[0][1].getQ_tubeFlow(),
+                        Math.min(link[1][4].getQ_tubeFlow(), link[4][5].getQ_tubeFlow()));
+
+                double route2 = Math.min(link[0][2].getQ_tubeFlow(),
+                        Math.min(link[2][3].getQ_tubeFlow(), link[3][5].getQ_tubeFlow()));
+
+                double route3 = Math.min(link[0][2].getQ_tubeFlow(), link[2][5].getQ_tubeFlow());
+
+                double route4 = Math.min(link[0][3].getQ_tubeFlow(), link[3][5].getQ_tubeFlow());
+                // 経路ごとの情報を1行にまとめて追記
+                writer.write(String.format("%d,%.4f,%.4f,%.4f,%.4f\n", ct, route1, route2, route3, route4));
+
+            }else if(runCounter == 2){
+                if (file.length() == 0) { // ファイルが空の場合のみヘッダーを書き込む
+                    writer.write("ct,v0->v1->v4->v5,v0->v2->v3->v5,v0->v2->v5,v0->v3->v5\n");
+                }
+                double route1 = Math.min(link[2][0].getQ_tubeFlow(),
+                        Math.min(link[0][1].getQ_tubeFlow(), link[1][4].getQ_tubeFlow()));
+
+                double route2 = Math.min(link[2][3].getQ_tubeFlow(),
+                        Math.min(link[3][0].getQ_tubeFlow(), Math.min(link[0][1].getQ_tubeFlow(), link[1][4].getQ_tubeFlow())));
+
+                double route3 = Math.min(link[2][3].getQ_tubeFlow(), Math.min(link[3][5].getQ_tubeFlow(), link[5][4].getQ_tubeFlow()));
+
+                double route4 = Math.min(link[2][5].getQ_tubeFlow(), link[5][4].getQ_tubeFlow());
+                // 経路ごとの情報を1行にまとめて追記
+                writer.write(String.format("%d,%.4f,%.4f,%.4f,%.4f\n", ct, route1, route2, route3, route4));
+            }
+        }
+    }
+
     //txtファイルに管の長さ，管の太さ，管の容量を出力するメソッド
     public void outputToTxt(Client client, int ct) throws IOException {
         // ディレクトリパスを作成
         String dirPath = "src/result/txt/result" + runCounter;
         // ファイル名を作成
-        String filename = dirPath + "/test_topology_" + (ct + 1) + ".net";
+        String filename = dirPath + "/test_topology_" + (ct + 1) + ".txt";
 
         // Fileオブジェクトでディレクトリの存在を確認・作成
         File dir = new File(dirPath);
@@ -451,9 +509,7 @@ public class PhysarumSolver {
                 // UAVが飛行中の場合のみ処理を実行
                 if (uav.getIsFlying()) {
                     // 現在の飛行時間とUAVの速さから移動距離を計算
-                    uav.stopTimer();
                     double flightDistance = uav.getFlightTime() * uav.getSpeed();
-                    uav.startTimer();
                     int[] path = uav.getPath();
 
                     // UAVの経路上の総距離を計算
@@ -510,6 +566,7 @@ public class PhysarumSolver {
                 if (link[i][j].getL_tubeLength() != INF && FlyingUAV[i][j] > 0) {
                     double newCapacity = link[i][j].getCapacity() - FlyingUAV[i][j];
                     link[i][j].setCapacity(newCapacity);
+                    link[j][i].setCapacity(newCapacity);
                 }
             }
         }
@@ -548,7 +605,6 @@ public class PhysarumSolver {
 
                 if(!fig_DIST){
                     Q_Kirchhoff[i] = 0.0;
-
                 }
                 fig_DIST = false;
             }
@@ -621,6 +677,9 @@ public class PhysarumSolver {
                 outputToPajek(client, eps, client.getFlow().getTheNumberOfUAV(), ct);
                 outputToExcel(client, ct);
                 outputToTxt(client, ct);
+            }
+            if(ct % PLOT_2 == 0 || ct == numLoop - 1){
+                outputRouteToExcel(client, ct);
             }
 
             ct++;

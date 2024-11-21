@@ -53,7 +53,7 @@ public class BoundaryController {
         Beacon source = beaconCluster.getBeacon(sourceId);
         Beacon destination = beaconCluster.getBeacon(destinationId);
 
-        int uavNum = 20;
+        int uavNum = 30;
         //flowListにsource, destination, uavNumを格納
         flow = new Flow(source, destination, uavNum);
 
@@ -80,6 +80,25 @@ public class BoundaryController {
 
         return client;
     }
+
+    public Client createClient3(){
+        int sourceId = 2;
+        int destinationId = 4;
+        Beacon source = beaconCluster.getBeacon(sourceId);
+        Beacon destination = beaconCluster.getBeacon(destinationId);
+
+        int uavNum = 20;
+        //flowListにsource, destination, uavNumを格納
+        flow = new Flow(source, destination, uavNum);
+
+        Client client = new Client(flow);
+        clientController = new ClientController();
+        clientController.addClient(client);
+
+        return client;
+    }
+
+
     public void routeRequest(Client client) throws IOException {
         //PSを実行
         solver.nodeConfigureToPajek(filePath, client, beaconCluster);
@@ -98,9 +117,29 @@ public class BoundaryController {
             boundaryController.routeRequest(client);
             passedClient.add(client);
             //UAVの飛行を全て終えたクライアントをdequeueする
+            // 20秒待機してから次の処理に移る
+            try {
+                Thread.sleep(30000); // 20秒待機
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                System.err.println("Thread was interrupted, failed to complete wait");
+            }
+
             client = boundaryController.createClient2();
             boundaryController.routeRequest(client);
             passedClient.add(client);
+
+            try {
+                Thread.sleep(50000); // 50秒待機
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                System.err.println("Thread was interrupted, failed to complete wait");
+            }
+
+            client = boundaryController.createClient3();
+            boundaryController.routeRequest(client);
+            passedClient.add(client);
+
 
         } catch (IOException e) {
             e.printStackTrace();
