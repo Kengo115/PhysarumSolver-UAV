@@ -1,16 +1,17 @@
 package item;
 
+
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class UAVTimer {
+public class ClientTimer {
     private Timer timer;
     private long startTime;
     private long endTime;
     private boolean isTiming;
 
-    public UAVTimer() {
+    public ClientTimer() {
         this.timer = new Timer();
         this.startTime = 0;
         this.endTime = 0;
@@ -22,7 +23,9 @@ public class UAVTimer {
         if (!isTiming) {
             this.startTime = System.currentTimeMillis();
             this.isTiming = true;
-            System.out.println("UAVタイマーが開始されました。");
+            System.out.println("クライアントタイマー開始: startTime = " + startTime);
+        } else {
+            System.out.println("クライアントタイマーは既に開始されています。");
         }
     }
 
@@ -31,8 +34,10 @@ public class UAVTimer {
         if (isTiming) {
             this.endTime = System.currentTimeMillis();
             long flightTime = getFlightTime();
-            System.out.println("UAVタイマーが停止されました。飛行時間: " + flightTime + " ms");
+            System.out.println("クライアントタイマーが停止されました。最終経過時間: " + flightTime + " s");
             this.isTiming = false;
+        }else {
+            System.out.println("クライアントタイマーは停止しています。");
         }
     }
 
@@ -41,12 +46,12 @@ public class UAVTimer {
     public long getFlightTime() {
         long flightTime;
         if (isTiming) {
+            System.out.println("クライアントタイマーが動作中です。");
             flightTime = (System.currentTimeMillis() - startTime) / 1000;
-            System.out.println("飛行時間: " + flightTime + "s");
             return flightTime; // タイマーが動作中の場合の経過時間
         } else {
+            System.out.println("クライアントタイマーは停止しています。");
             flightTime = (endTime - startTime) / 1000;
-            System.out.println("最終飛行時間: " + flightTime + "s");
             return flightTime; // タイマー停止後の最終飛行時間
         }
     }
@@ -58,13 +63,14 @@ public class UAVTimer {
         this.startTime = 0;
         this.endTime = 0;
         this.isTiming = false;
-        System.out.println("UAVタイマーがリセットされました。");
+        this.stop();
+        System.out.println("クライアントタイマーがリセットされました。");
     }
 
     // タイマーのキャンセル
     public void cancel() {
         this.stop();
         this.timer.cancel();
-        System.out.println("UAVタイマーがキャンセルされました。");
+        System.out.println("クライアントタイマーがキャンセルされました。");
     }
 }

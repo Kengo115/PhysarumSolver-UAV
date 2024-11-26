@@ -12,6 +12,7 @@ public class Uav {
     private UAVTimer uavTimer = new UAVTimer();
     private int[] path;
     private boolean isFlying = false;
+    private double flightTime = 0;
 
     //コンストラクタ
     public Uav(double speed, double x, double y, int id, Beacon Source, Beacon Destination) {
@@ -79,5 +80,13 @@ public class Uav {
     //到着地を返す
     public Beacon getDistination() {
         return Destination;
+    }
+
+    public void setFlightTime(double flightTime) {
+        this.flightTime = flightTime;
+    }
+
+    public double getFlightTime(double flightTime) {
+        return flightTime;
     }
 }

@@ -4,6 +4,7 @@ import client.Client;
 import client.ClientController;
 import item.*;
 import server.PhysarumSolver;
+import server.UAVFlyScheduler;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,6 +25,8 @@ public class BoundaryController {
     Flow flow;
 
     String filePath = "src/result/practice.net";
+
+    private static int trial = 5;
 
     //ネットワークトポロジーを設定する関数
     public void setNetworkTopology() throws IOException {
@@ -46,19 +49,38 @@ public class BoundaryController {
         return nodeNum;
     }
 
+    //sourceId, destinationId, uavNumをランダムに決める
+    public Client createRandomClient(){
+        int sourceId = (int)(Math.random() * nodeNum);
+        int destinationId = (int)(Math.random() * nodeNum);
+        while(sourceId == destinationId){
+            destinationId = (int)(Math.random() * nodeNum);
+        }
+        Beacon source = beaconCluster.getBeacon(sourceId);
+        Beacon destination = beaconCluster.getBeacon(destinationId);
+
+        int uavNum = 1 + (int)(Math.random() * 14);
+        //flowListにsource, destination, uavNumを格納
+        flow = new Flow(source, destination, uavNum);
+
+        Client client = new Client(flow, 1);
+        clientController.addClient(client);
+
+        return client;
+    }
+
     //クライアントを生成する関数
-    public Client createClient() {
+    public Client createClient1() {
         int sourceId = 0;
         int destinationId = 5;
         Beacon source = beaconCluster.getBeacon(sourceId);
         Beacon destination = beaconCluster.getBeacon(destinationId);
 
-        int uavNum = 30;
+        int uavNum = 15;
         //flowListにsource, destination, uavNumを格納
         flow = new Flow(source, destination, uavNum);
 
-        Client client = new Client(flow);
-        clientController = new ClientController();
+        Client client = new Client(flow, 1);
         clientController.addClient(client);
 
         return client;
@@ -70,12 +92,11 @@ public class BoundaryController {
         Beacon source = beaconCluster.getBeacon(sourceId);
         Beacon destination = beaconCluster.getBeacon(destinationId);
 
-        int uavNum = 20;
+        int uavNum = 15;
         //flowListにsource, destination, uavNumを格納
         flow = new Flow(source, destination, uavNum);
 
-        Client client = new Client(flow);
-        clientController = new ClientController();
+        Client client = new Client(flow, 2);
         clientController.addClient(client);
 
         return client;
@@ -87,12 +108,11 @@ public class BoundaryController {
         Beacon source = beaconCluster.getBeacon(sourceId);
         Beacon destination = beaconCluster.getBeacon(destinationId);
 
-        int uavNum = 20;
+        int uavNum = 15;
         //flowListにsource, destination, uavNumを格納
         flow = new Flow(source, destination, uavNum);
 
-        Client client = new Client(flow);
-        clientController = new ClientController();
+        Client client = new Client(flow, 3);
         clientController.addClient(client);
 
         return client;
@@ -102,7 +122,7 @@ public class BoundaryController {
     public void routeRequest(Client client) throws IOException {
         //PSを実行
         solver.nodeConfigureToPajek(filePath, client, beaconCluster);
-        solver.run(client, passedClient, num_loop);
+        solver.run(client, passedClient, clientController, num_loop);
     }
 
     public static void main(String[] args) {
@@ -113,34 +133,52 @@ public class BoundaryController {
 
         try {
             boundaryController.setNetworkTopology();
-            client = boundaryController.createClient();
+
+            client = boundaryController.createClient1();
             boundaryController.routeRequest(client);
-            passedClient.add(client);
+            synchronized (passedClient) {
+                passedClient.add(client);
+                System.out.println("クライアント1をpassedClientに追加しました");
+            }
+
+            clientController.startTimer();
+
             //UAVの飛行を全て終えたクライアントをdequeueする
-            // 20秒待機してから次の処理に移る
+            // 12秒待機してから次の処理に移る
             try {
-                Thread.sleep(30000); // 20秒待機
+                Thread.sleep(12000); // 12秒待機
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 System.err.println("Thread was interrupted, failed to complete wait");
             }
 
-            client = boundaryController.createClient2();
+            UAVFlyScheduler.startFlyUAVUpdates(passedClient, clientController);
+            //ここではクライアントタイマーは起動中
+
+            client = boundaryController.createClient2();//ここでクライアントタイマーが停止したと考えられる
+            //ここではクライアントタイマーはすでに停止
             boundaryController.routeRequest(client);
-            passedClient.add(client);
+            synchronized (passedClient) {
+                passedClient.add(client);
+                System.out.println("クライアント2をpassedClientに追加しました");
+            }
 
+            //ここではクライアントタイマーすでに停止
             try {
-                Thread.sleep(50000); // 50秒待機
+                Thread.sleep(12000); // 12秒待機
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 System.err.println("Thread was interrupted, failed to complete wait");
             }
+
 
             client = boundaryController.createClient3();
             boundaryController.routeRequest(client);
-            passedClient.add(client);
-
-
+            synchronized (passedClient) {
+                passedClient.add(client);
+                System.out.println("クライアント3をpassedClientに追加しました");
+            }
+            //passedClientが空になるまでUAVFlySchedulerを実行
         } catch (IOException e) {
             e.printStackTrace();
         }
