@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 
 public class UAVFlyScheduler {
     private static ScheduledExecutorService scheduler;
-    private static final int UPDATE_INTERVAL_SECONDS = 3;
+    private static final int UPDATE_INTERVAL_SECONDS = 1;
 
     // UAV位置更新を開始する
     public static synchronized void startFlyUAVUpdates(Queue<Client> passedClient, ClientController clientController) {
