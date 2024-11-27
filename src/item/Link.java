@@ -6,11 +6,10 @@ public class Link {
     private Beacon beacon2;
     private double distance;
     private double capacity;
+    private double initCapacity;
     private int flyingUAV;
     private double congestionRate;
     // リンクの基本パラメータ
-    private double Q_Kirchhoff;
-    private double P_tubePressure;
     private double Q_tubeFlow;
     private double D_tubeThickness;
     private double L_tubeLength;
@@ -20,6 +19,7 @@ public class Link {
         this.beacon1 = beacon1;
         this.beacon2 = beacon2;
         this.capacity = capacity;
+        this.initCapacity = capacity;
     }
 
 
@@ -40,22 +40,6 @@ public class Link {
     }
     public void setFlyingUAV(int flyingUAV) {
         this.flyingUAV = flyingUAV;
-    }
-
-    public double getP_tubePressure() {
-        return P_tubePressure;
-    }
-
-    public void setP_tubePressure(double p_tubePressure) {
-        P_tubePressure = p_tubePressure;
-    }
-
-    public double getQ_Kirchhoff() {
-        return Q_Kirchhoff;
-    }
-
-    public void setQ_Kirchhoff(double q_Kirchhoff) {
-        Q_Kirchhoff = q_Kirchhoff;
     }
 
     //接続ビーコンを返す
@@ -103,4 +87,7 @@ public class Link {
         congestionRate = flyingUAV / capacity;
     }
 
+    public double getInitCapacity() {
+        return initCapacity;
+    }
 }

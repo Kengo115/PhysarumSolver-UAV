@@ -1,10 +1,10 @@
 *Vertices	6
-1 "1" 0.1000 0.4000 ic Black
+1 "1" 0.1000 0.4000 ic White
 2 "2" 0.1000 0.7000 ic White
-3 "3" 0.5000 0.1000 ic White
+3 "3" 0.5000 0.1000 ic Black
 4 "4" 0.5000 0.4000 ic White
-5 "5" 0.5000 0.7000 ic White
-6 "6" 0.9000 0.4000 ic Black
+5 "5" 0.5000 0.7000 ic Black
+6 "6" 0.9000 0.4000 ic White
 *Arcs
 *Edges
 1 2 1

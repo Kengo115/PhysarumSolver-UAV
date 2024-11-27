@@ -5,22 +5,24 @@ import client.ClientController;
 import item.Beacon;
 import item.BeaconCluster;
 import item.Link;
+import item.Uav;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.LinkedList;
+import java.util.Queue;
 
 
 public class PhysarumSolver {
 
     private static final double INF = 10000.0;
     private static final double NEG = -1.0;
-    private static final double GAMMA = 1.5;
+    private static final double GAMMA = 1.01;
     private static final double DELTA_TIME = 0.01;
     private static final int PLOT = 1;
+    private static final int PLOT_2 = 20;
     private static final double INIT_THICKNESS = 0.5;
     private static final double INIT_LENGTH = 1.0;
     private static final double INIT_RATE = 100.0;
@@ -32,7 +34,7 @@ public class PhysarumSolver {
     private boolean fig_DIST = false;
     private static final double coefficient_tanh = 1;
     // 基本パラメータ
-    private Link[][] link;
+    private static Link[][] link;
 
     private double[] Q_Kirchhoff;
     private double[] P_tubePressure;
@@ -45,29 +47,23 @@ public class PhysarumSolver {
     // シグモイド関数用
     private double[][] Q_tubeFlow_sigmoidOutput;
 
-    private Client client;
-    private ClientController clientController;
     private BeaconCluster beaconCluster;
-    ArrayList<Integer> sourceCluster = new ArrayList<>(5);
-    ArrayList<Integer> distCluster = new ArrayList<>(5);
     private double[][] Flow_Capacity;
     private int[][] tubeFlow;
     private int[][] adjMatrix;
-    private int UAV_counter = 0;
-    private int num_pajek = 1;
-    private int num_txt = 1;
-    private int num_excel = 1;
+
     private int min_Flow = 100;
     int UAV_count;
+    int maxPathIndex = 0;
+    private static int clientNum = 1;
+
 
 
     public PhysarumSolver(int node) {
         initialize(node);
     }
 
-
     public void initialize(int node) {
-        int nodeExcept = node - 1;
 
         // 1xN matrix
         this.Q_Kirchhoff = new double[node];
@@ -97,16 +93,82 @@ public class PhysarumSolver {
         Arrays.fill(Q_Kirchhoff, 0.0);
         Arrays.fill(P_tubePressure, 0.0);
         // 2次元配列の初期化
-        for (int i = 0; i < pressureCoefficient.length; i++) {
-            for (int j = 0; j < pressureCoefficient[i].length; j++) {
+        for (int i = 0; i < node; i++) {
+            for (int j = 0; j < node; j++) {
                 pressureCoefficient[i][j] = 0.0;  // すべての要素に0.0を設定
                 D_tubeThickness_deltaT[i][j] = 0.0;
                 Q_tubeFlow_sigmoidOutput[i][j] = 0.0;
                 Flow_Capacity[i][j] = 0.0;
                 tubeFlow[i][j] = 0;
                 adjMatrix[i][j] = 0;
+                link[i][j].setD_tubeThickness(0.0);
+                link[i][j].setL_tubeLength(INF);
+                link[i][j].setQ_tubeFlow(0.0);
             }
         }
+        link[0][1].setD_tubeThickness(INIT_THICKNESS);
+        link[0][1].setL_tubeLength(1);
+        adjMatrix[0][1] = 1;
+
+        link[1][0].setD_tubeThickness(INIT_THICKNESS);
+        link[1][0].setL_tubeLength(1);
+        adjMatrix[1][0] = 1;
+
+        link[0][2].setD_tubeThickness(INIT_THICKNESS);
+        link[0][2].setL_tubeLength(2);
+        adjMatrix[0][2] = 1;
+
+        link[2][0].setD_tubeThickness(INIT_THICKNESS);
+        link[2][0].setL_tubeLength(2);
+        adjMatrix[2][0] = 1;
+
+        link[0][3].setD_tubeThickness(INIT_THICKNESS);
+        link[0][3].setL_tubeLength(3);
+        adjMatrix[0][3] = 1;
+
+        link[3][0].setD_tubeThickness(INIT_THICKNESS);
+        link[3][0].setL_tubeLength(3);
+        adjMatrix[3][0] = 1;
+
+        link[1][4].setD_tubeThickness(INIT_THICKNESS);
+        link[1][4].setL_tubeLength(2);
+        adjMatrix[1][4] = 1;
+
+        link[4][1].setD_tubeThickness(INIT_THICKNESS);
+        link[4][1].setL_tubeLength(2);
+        adjMatrix[4][1] = 1;
+
+        link[2][3].setD_tubeThickness(INIT_THICKNESS);
+        link[2][3].setL_tubeLength(1);
+        adjMatrix[2][3] = 1;
+
+        link[3][2].setD_tubeThickness(INIT_THICKNESS);
+        link[3][2].setL_tubeLength(1);
+        adjMatrix[3][2] = 1;
+
+        link[2][5].setD_tubeThickness(INIT_THICKNESS);
+        link[2][5].setL_tubeLength(3);
+        adjMatrix[2][5] = 1;
+
+        link[5][2].setD_tubeThickness(INIT_THICKNESS);
+        link[5][2].setL_tubeLength(3);
+        adjMatrix[5][2] = 1;
+
+        link[3][5].setD_tubeThickness(INIT_THICKNESS);
+        link[3][5].setL_tubeLength(2);
+        adjMatrix[3][5] = 1;
+
+        link[5][3].setD_tubeThickness(INIT_THICKNESS);
+        link[5][3].setL_tubeLength(2);
+        adjMatrix[5][3] = 1;
+
+        link[4][5].setD_tubeThickness(INIT_THICKNESS);
+        link[4][5].setL_tubeLength(3);
+        adjMatrix[4][5] = 1;
+
+        link[5][4].setD_tubeThickness(INIT_THICKNESS);
+        link[5][4].setL_tubeLength(3);
+        adjMatrix[5][4] = 1;
     }
 
 
@@ -114,33 +176,6 @@ public class PhysarumSolver {
     public void setLink(int node, BeaconCluster beaconList){
         this.node = node;
         this.beaconCluster = beaconList;
-        /**
-         //nodeDistanceによってリンクを決定
-         double maxDistance = Math.sqrt(2);  // 最大距離 sqrt(2)
-
-         for (int i = 0; i < node; i++) {
-         for (int j = 0; j < node; j++) {
-         if (i == j) {
-         link.get(i).get(j).setD_tubeThickness(0.0);
-         link.get(i).get(j).setL_tubeLength(INF);
-         } else {
-         link.get(i).get(j).setDistance(Math.sqrt(Math.pow(beaconList.getBeacon(i).getX() - beaconList.getBeacon(j).getX(), 2) + Math.pow(beaconList.getBeacon(i).getY() - beaconList.getBeacon(j).getY(), 2)));
-         double distance = link.get(i).get(j).getDistance();
-
-         System.out.println("node_distance[" + i + "][" + j + "] = " + distance);
-
-         if(distance > maxDistance) {
-         link.get(i).get(j).setL_tubeLength(INF);
-         }else {
-         link.get(i).get(j).setLink(beaconList.getBeacon(i), beaconList.getBeacon(j), 20);
-         link.get(i).get(j).setD_tubeThickness(INIT_THICKNESS);
-         link.get(i).get(j).setL_tubeLength(INIT_LENGTH);
-         link.get(i).get(j).setCongestionRate(INIT_RATE);
-         }
-         }
-         }
-         }
-         */
 
         //手動でリンクを決定
         for(int i=0; i<node; i++){
@@ -151,115 +186,115 @@ public class PhysarumSolver {
             }
         }
 
-        link[0][1].setLink(beaconList.getBeacon(0), beaconList.getBeacon(1), 10);
+        link[0][1].setLink(beaconList.getBeacon(0), beaconList.getBeacon(1), 5);
         link[0][1].setD_tubeThickness(INIT_THICKNESS);
         link[0][1].setL_tubeLength(1);
-        link[0][1].setDistance(1000);
+        link[0][1].setDistance(200);
         link[0][1].setCongestionRate(INIT_RATE);
         adjMatrix[0][1] = 1;
 
-        link[1][0].setLink(beaconList.getBeacon(1), beaconList.getBeacon(0), 10);
+        link[1][0].setLink(beaconList.getBeacon(1), beaconList.getBeacon(0), 5);
         link[1][0].setD_tubeThickness(INIT_THICKNESS);
         link[1][0].setL_tubeLength(1);
-        link[1][0].setDistance(1000);
+        link[1][0].setDistance(200);
         link[1][0].setCongestionRate(INIT_RATE);
         adjMatrix[1][0] = 1;
 
-        link[0][2].setLink(beaconList.getBeacon(0), beaconList.getBeacon(4), 30);
+        link[0][2].setLink(beaconList.getBeacon(0), beaconList.getBeacon(2), 15);
         link[0][2].setD_tubeThickness(INIT_THICKNESS);
-        link[0][2].setL_tubeLength(2);
-        link[0][2].setDistance(2000);
+        link[0][2].setL_tubeLength(3);
+        link[0][2].setDistance(600);
         link[0][2].setCongestionRate(INIT_RATE);
         adjMatrix[0][2] = 1;
 
-        link[2][0].setLink(beaconList.getBeacon(4), beaconList.getBeacon(0), 30);
+        link[2][0].setLink(beaconList.getBeacon(2), beaconList.getBeacon(0), 15);
         link[2][0].setD_tubeThickness(INIT_THICKNESS);
-        link[2][0].setL_tubeLength(2);
-        link[2][0].setDistance(2000);
+        link[2][0].setL_tubeLength(3);
+        link[2][0].setDistance(600);
         link[2][0].setCongestionRate(INIT_RATE);
         adjMatrix[2][0] = 1;
 
-        link[0][3].setLink(beaconList.getBeacon(1), beaconList.getBeacon(2), 20);
+        link[0][3].setLink(beaconList.getBeacon(0), beaconList.getBeacon(3), 10);
         link[0][3].setD_tubeThickness(INIT_THICKNESS);
         link[0][3].setL_tubeLength(3);
-        link[0][3].setDistance(3000);
+        link[0][3].setDistance(600);
         link[0][3].setCongestionRate(INIT_RATE);
         adjMatrix[0][3] = 1;
 
-        link[3][0].setLink(beaconList.getBeacon(2), beaconList.getBeacon(1), 20);
+        link[3][0].setLink(beaconList.getBeacon(3), beaconList.getBeacon(0), 10);
         link[3][0].setD_tubeThickness(INIT_THICKNESS);
         link[3][0].setL_tubeLength(3);
-        link[3][0].setDistance(3000);
+        link[3][0].setDistance(600);
         link[3][0].setCongestionRate(INIT_RATE);
         adjMatrix[3][0] = 1;
 
-        link[1][4].setLink(beaconList.getBeacon(1), beaconList.getBeacon(3), 20);
+        link[1][4].setLink(beaconList.getBeacon(1), beaconList.getBeacon(4), 10);
         link[1][4].setD_tubeThickness(INIT_THICKNESS);
         link[1][4].setL_tubeLength(2);
-        link[1][4].setDistance(2000);
+        link[1][4].setDistance(400);
         link[1][4].setCongestionRate(INIT_RATE);
         adjMatrix[1][4] = 1;
 
-        link[4][1].setLink(beaconList.getBeacon(3), beaconList.getBeacon(1), 20);
+        link[4][1].setLink(beaconList.getBeacon(4), beaconList.getBeacon(1), 10);
         link[4][1].setD_tubeThickness(INIT_THICKNESS);
         link[4][1].setL_tubeLength(2);
-        link[4][1].setDistance(2000);
+        link[4][1].setDistance(400);
         link[4][1].setCongestionRate(INIT_RATE);
         adjMatrix[4][1] = 1;
 
-        link[2][3].setLink(beaconList.getBeacon(2), beaconList.getBeacon(3), 10);
+        link[2][3].setLink(beaconList.getBeacon(2), beaconList.getBeacon(3), 5);
         link[2][3].setD_tubeThickness(INIT_THICKNESS);
         link[2][3].setL_tubeLength(1);
-        link[2][3].setDistance(1000);
+        link[2][3].setDistance(200);
         link[2][3].setCongestionRate(INIT_RATE);
         adjMatrix[2][3] = 1;
 
-        link[3][2].setLink(beaconList.getBeacon(3), beaconList.getBeacon(2), 10);
+        link[3][2].setLink(beaconList.getBeacon(3), beaconList.getBeacon(2), 5);
         link[3][2].setD_tubeThickness(INIT_THICKNESS);
         link[3][2].setL_tubeLength(1);
-        link[3][2].setDistance(1000);
+        link[3][2].setDistance(200);
         link[3][2].setCongestionRate(INIT_RATE);
         adjMatrix[3][2] = 1;
 
-        link[2][5].setLink(beaconList.getBeacon(2), beaconList.getBeacon(5), 20);
+        link[2][5].setLink(beaconList.getBeacon(2), beaconList.getBeacon(5), 15);
         link[2][5].setD_tubeThickness(INIT_THICKNESS);
         link[2][5].setL_tubeLength(3);
-        link[2][5].setDistance(3000);
+        link[2][5].setDistance(600);
         link[2][5].setCongestionRate(INIT_RATE);
         adjMatrix[2][5] = 1;
 
-        link[5][2].setLink(beaconList.getBeacon(5), beaconList.getBeacon(2), 20);
+        link[5][2].setLink(beaconList.getBeacon(5), beaconList.getBeacon(2), 15);
         link[5][2].setD_tubeThickness(INIT_THICKNESS);
         link[5][2].setL_tubeLength(3);
-        link[5][2].setDistance(3000);
+        link[5][2].setDistance(600);
         link[5][2].setCongestionRate(INIT_RATE);
         adjMatrix[5][2] = 1;
 
-        link[3][5].setLink(beaconList.getBeacon(3), beaconList.getBeacon(5), 20);
+        link[3][5].setLink(beaconList.getBeacon(3), beaconList.getBeacon(5), 10);
         link[3][5].setD_tubeThickness(INIT_THICKNESS);
         link[3][5].setL_tubeLength(2);
-        link[3][5].setDistance(2000);
+        link[3][5].setDistance(400);
         link[3][5].setCongestionRate(INIT_RATE);
         adjMatrix[3][5] = 1;
 
-        link[5][3].setLink(beaconList.getBeacon(5), beaconList.getBeacon(3), 20);
+        link[5][3].setLink(beaconList.getBeacon(5), beaconList.getBeacon(3), 10);
         link[5][3].setD_tubeThickness(INIT_THICKNESS);
         link[5][3].setL_tubeLength(2);
-        link[5][3].setDistance(2000);
+        link[5][3].setDistance(400);
         link[5][3].setCongestionRate(INIT_RATE);
         adjMatrix[5][3] = 1;
 
-        link[4][5].setLink(beaconList.getBeacon(4), beaconList.getBeacon(5), 20);
+        link[4][5].setLink(beaconList.getBeacon(4), beaconList.getBeacon(5), 15);
         link[4][5].setD_tubeThickness(INIT_THICKNESS);
-        link[4][5].setL_tubeLength(3);
-        link[4][5].setDistance(3000);
+        link[4][5].setL_tubeLength(4);
+        link[4][5].setDistance(800);
         link[4][5].setCongestionRate(INIT_RATE);
         adjMatrix[4][5] = 1;
 
-        link[5][4].setLink(beaconList.getBeacon(5), beaconList.getBeacon(4), 20);
+        link[5][4].setLink(beaconList.getBeacon(5), beaconList.getBeacon(4), 15);
         link[5][4].setD_tubeThickness(INIT_THICKNESS);
-        link[5][4].setL_tubeLength(3);
-        link[5][4].setDistance(3000);
+        link[5][4].setL_tubeLength(4);
+        link[5][4].setDistance(800);
         link[5][4].setCongestionRate(INIT_RATE);
         adjMatrix[5][4] = 1;
 
@@ -272,24 +307,19 @@ public class PhysarumSolver {
         Beacon source = client.getFlow().getSource();
         Beacon dist = client.getFlow().getDestination();
 
-        sourceCluster.add(source.getId());
-        distCluster.add(dist.getId());
-
-
         // ファイル出力処理
         try (FileWriter writer = new FileWriter(new File(NET_file))) {
             writer.write("*Vertices\t" + node + "\n");
             for (int i = 0; i < node; i++) {
-                for(int j=0; j<sourceCluster.size(); j++){
-                    if(i == sourceCluster.get(j)){
-                        fig_SOURCE = true;
-                    }
+
+                if(i == source.getId()){
+                    fig_SOURCE = true;
                 }
-                for(int j=0; j<distCluster.size(); j++){
-                    if(i == distCluster.get(j)){
-                        fig_DIST = true;
-                    }
+
+                if(i == dist.getId()){
+                    fig_DIST = true;
                 }
+
                 if (fig_SOURCE || fig_DIST) {
                     writer.write(String.format("%d \"%d\" %.4f %.4f ic Black\n", i + 1, i + 1, beaconList.getBeacon(i).getX(), beaconList.getBeacon(i).getY()));
                 } else {
@@ -300,27 +330,6 @@ public class PhysarumSolver {
             }
             writer.write("*Arcs\n*Edges\n");
 
-            /**
-             //nodeDistanceで接続を決定
-             for (int i = 0; i < node; i++) {
-             for (int j = 0; j < node; j++) {
-
-             if (i == j) {
-             //nothing to do
-             } else {
-             double distance = link.get(i).get(j).getDistance();
-
-             if (0.0 < distance && distance <= THRESHOLD_1) {
-             writer.write(String.format("%d %d 1\n", i + 1, j + 1));
-             } else if (THRESHOLD_1 < distance && distance <= THRESHOLD_2) {
-             writer.write(String.format("%d %d 1\n", i + 1, j + 1));
-             } else if (THRESHOLD_2 < distance && distance <= maxDistance) {
-             writer.write(String.format("%d %d 1\n", i + 1, j + 1));
-             }
-             }
-             }
-             }
-             */
             for(int i = 0; i < node; i++){
                 for(int j = 0; j < node; j++){
                     if(i != j && link[i][j].getL_tubeLength() != INF){
@@ -340,7 +349,7 @@ public class PhysarumSolver {
         Beacon dist = client.getFlow().getDestination();
 
         // ディレクトリパスを作成
-        String dirPath = "src/result/pajek/result" + num_pajek;
+        String dirPath = "src/result/pajek/result" + runCounter;
         // ファイル名を作成
         String filename = dirPath + "/test_topology_" + (ct + 1) + ".net";
 
@@ -365,7 +374,7 @@ public class PhysarumSolver {
                 for (int j = 0; j < node; j++) {
                     if (link[i][j].getL_tubeLength() != INF){
                         double flow = link[i][j].getQ_tubeFlow();
-                        if (0 < link[i][j].getDistance() && link[i][j].getDistance() <= Math.sqrt(2)) {
+                        if (link[i][j].getDistance() > 0) {
                             if (flow > 0 && flow <= eps) {
                                 // Small flow, no color
                             } else if (flow > eps && flow <= THRESHOLD_1) {
@@ -385,9 +394,9 @@ public class PhysarumSolver {
     public void outputToExcel(Client client, int ct) throws IOException {
 
         // ディレクトリパスを作成
-        String dirPath = "src/result/excel/result" + num_excel;
+        String dirPath = "src/result/excel/result" + runCounter;
         // ファイル名を作成
-        String filename = dirPath + "/test_topology_" + (ct + 1) + ".net";
+        String filename = dirPath + "/test_topology_" + (ct + 1) + ".txt";
 
         // Fileオブジェクトでディレクトリの存在を確認・作成
         File dir = new File(dirPath);
@@ -406,12 +415,69 @@ public class PhysarumSolver {
             }
         }
     }
+
+    // 経路ごとのUAV数をExcel形式で出力するメソッド
+    public void outputRouteToExcel(Client client, int ct) throws IOException {
+        // ディレクトリパスを作成
+        String dirPath = "src/result/rute/result" + runCounter;
+        // ファイル名を作成
+        String filename = dirPath + "/test_topology_routes.txt";
+
+        // Fileオブジェクトでディレクトリの存在を確認・作成
+        File dir = new File(dirPath);
+        if (!dir.exists()) {
+            // ディレクトリが存在しない場合は作成
+            dir.mkdirs();
+        }
+
+        // ファイルに追記
+        try (FileWriter writer = new FileWriter(filename, true)) { // true で追記モードに設定
+            // ヘッダーは1回だけ記載されるようにする
+            File file = new File(filename);
+            if (file.length() == 0) { // ファイルが空の場合のみヘッダーを書き込む
+                writer.write("ct,v0->v1->v4->v5,v0->v2->v3->v5,v0->v2->v5,v0->v3->v5\n");
+            }
+            if(runCounter == 0 || runCounter == 1) {
+                if (file.length() == 0) { // ファイルが空の場合のみヘッダーを書き込む
+                    writer.write("ct,v0->v1->v4->v5,v0->v2->v3->v5,v0->v2->v5,v0->v3->v5\n");
+                }
+                double route1 = Math.min(link[0][1].getQ_tubeFlow(),
+                        Math.min(link[1][4].getQ_tubeFlow(), link[4][5].getQ_tubeFlow()));
+
+                double route2 = Math.min(link[0][2].getQ_tubeFlow(),
+                        Math.min(link[2][3].getQ_tubeFlow(), link[3][5].getQ_tubeFlow()));
+
+                double route3 = Math.min(link[0][2].getQ_tubeFlow(), link[2][5].getQ_tubeFlow());
+
+                double route4 = Math.min(link[0][3].getQ_tubeFlow(), link[3][5].getQ_tubeFlow());
+                // 経路ごとの情報を1行にまとめて追記
+                writer.write(String.format("%d,%.4f,%.4f,%.4f,%.4f\n", ct, route1, route2, route3, route4));
+
+            }else if(runCounter == 2){
+                if (file.length() == 0) { // ファイルが空の場合のみヘッダーを書き込む
+                    writer.write("ct,v0->v1->v4->v5,v0->v2->v3->v5,v0->v2->v5,v0->v3->v5\n");
+                }
+                double route1 = Math.min(link[2][0].getQ_tubeFlow(),
+                        Math.min(link[0][1].getQ_tubeFlow(), link[1][4].getQ_tubeFlow()));
+
+                double route2 = Math.min(link[2][3].getQ_tubeFlow(),
+                        Math.min(link[3][0].getQ_tubeFlow(), Math.min(link[0][1].getQ_tubeFlow(), link[1][4].getQ_tubeFlow())));
+
+                double route3 = Math.min(link[2][3].getQ_tubeFlow(), Math.min(link[3][5].getQ_tubeFlow(), link[5][4].getQ_tubeFlow()));
+
+                double route4 = Math.min(link[2][5].getQ_tubeFlow(), link[5][4].getQ_tubeFlow());
+                // 経路ごとの情報を1行にまとめて追記
+                writer.write(String.format("%d,%.4f,%.4f,%.4f,%.4f\n", ct, route1, route2, route3, route4));
+            }
+        }
+    }
+
     //txtファイルに管の長さ，管の太さ，管の容量を出力するメソッド
     public void outputToTxt(Client client, int ct) throws IOException {
         // ディレクトリパスを作成
-        String dirPath = "src/result/txt/result" + num_txt;
+        String dirPath = "src/result/txt/result" + runCounter;
         // ファイル名を作成
-        String filename = dirPath + "/test_topology_" + (ct + 1) + ".net";
+        String filename = dirPath + "/test_topology_" + (ct + 1) + ".txt";
 
         // Fileオブジェクトでディレクトリの存在を確認・作成
         File dir = new File(dirPath);
@@ -434,52 +500,128 @@ public class PhysarumSolver {
     }
 
 
-    //UAVを移動させるメソッド
-    public void flyUAV(Client client) {
-        /**clientが保持する1台1台のUAV位置を更新する
-         * clientが保持するUAVTimerとUAVが持つ速さを掛け算することでUAVの移動距離がわかる
-         * UAVの移動経路はUAVのpathに格納されているのでそれを参照する
-         * リンク飛行中のUAV数をカウントする配列を用意し，updateCapacity()により管の容量を更新するメソッドを呼び出す
-         **/
-        int nodeExcept = node - 1;
-        int[] UAV_count = new int[nodeExcept];
-        for (int i = 0; i < nodeExcept; i++) {
-            UAV_count[i] = 0;
-        }
+    // UAVを移動させるメソッド
+    public static void flyUAV(Queue<Client> passedClient, ClientController clientcontroller) {
+        // リンク上の飛行UAV数を保持する配列を初期化
+        int[][] FlyingUAV = new int[node][node];
 
-        for (int i = 0; i < client.getFlow().getTheNumberOfUAV(); i++) {
-            int pathSize = client.getFlow().getUav(i).getPath().size();
-            if (pathSize > 1) {
-                int source = client.getFlow().getUav(i).getPath().get(0);
-                int dist = client.getFlow().getUav(i).getPath().get(1);
-                link[source][dist].setCongestionRate(link[source][dist].getCongestionRate() + 1);
-                UAV_count[dist - 1]++;
+        // Queueの中に前回以前のClientが含まれている場合、そのUAVを取り出してリンク上の飛行台数を更新
+        for (Client client : passedClient) {
+            Uav[] uavList = client.getFlow().getUavList();
+            for (Uav uav : uavList) {
+                // UAVが飛行中の場合のみ処理を実行
+                if (uav.getIsFlying()) {
+                    // 現在の飛行時間とUAVの速さから移動距離を計算
+                    double flightDistance = uav.getFlightTime() * uav.getSpeed();
+                    int[] path = uav.getPath();
+
+                    // UAVの経路上の総距離を計算
+                    double totalPathDistance = 0.0;
+                    for (int k = 0; k < path.length - 1; k++) {
+                        int startNode = path[k];
+                        int endNode = path[k + 1];
+                        totalPathDistance += link[startNode][endNode].getDistance();
+                    }
+
+
+                    // UAVが飛行完了しているかを確認
+                    if (flightDistance >= totalPathDistance) {
+                        // 飛行が完了している場合、タイマーをキャンセル
+                        uav.cancelTimer();
+                        client.incrementFinishFlyingCounter(); // 完了したUAVの数を増加
+
+                        // CSV形式のtxtファイルに書き込み
+                        String dirPath = "src/result/time";
+                        String filePath = dirPath + "/flight_times.csv";
+
+                        // ディレクトリが存在しない場合は作成
+                        File dir = new File(dirPath);
+                        if (!dir.exists()) {
+                            dir.mkdirs();
+                        }
+
+                        // 飛行時間の取得
+                        long flightTime = clientcontroller.getFlightTime();
+
+                        try (FileWriter writer = new FileWriter(filePath, true)) {
+                            // ファイルが空の場合、ヘッダーを追加
+                            File file = new File(filePath);
+                            if (file.length() == 0) {
+                                writer.write("time,ClientID,UAVID,speed,distance\n");
+                            }
+
+                            // 行を書き込み
+                            writer.write(String.format("%d,%d,%d,%f,%f\n", flightTime, client.getId(), uav.getId(), uav.getSpeed(), totalPathDistance));
+                        } catch (IOException e) {
+                            System.err.println("ファイル書き込みエラー: " + e.getMessage());
+                        }
+
+                        continue; // 次のUAVへ
+                    }
+
+
+                    // 経路上のリンクごとにUAVの位置を確認
+                    double traveledDistance = 0.0;
+                    for (int k = 0; k < path.length - 1; k++) {
+                        int startNode = path[k];
+                        int endNode = path[k + 1];
+                        double linkLength = link[startNode][endNode].getDistance();
+
+                        if (traveledDistance + linkLength >= flightDistance) {
+                            // UAVがリンク上にいる場合、該当リンクの飛行UAV数を増加
+                            FlyingUAV[startNode][endNode]++;
+                            break;
+                        } else {
+                            traveledDistance += linkLength; // 次のリンクに進む
+                        }
+                    }
+                }
+            }
+            //FinishFlyingCounterとUAVの数が一致した場合、Clientを削除
+            if (client.getFinishFlyingCounter() == client.getFlow().getTheNumberOfUAV()) {
+                passedClient.remove(client);
+                System.out.println("Client " + clientNum + " has been removed.");
+
+                if(clientcontroller.getIsTiming()){
+                    System.out.println("正しく動作しています");
+                }else{
+                    System.out.println("正しく動作していません");
+                }
+
+                clientNum++;
             }
         }
+        // 飛行中のUAVに基づいて管の容量を更新
+        updateCapacity(FlyingUAV);
+        //クライアントタイマー動作中
+    }
 
+    // 管の容量を更新するメソッド
+    public static void updateCapacity(int[][] FlyingUAV) {
+        //Capacityを初期値に戻す
         for (int i = 0; i < node; i++) {
             for (int j = 0; j < node; j++) {
                 if (link[i][j].getL_tubeLength() != INF) {
-                    link[i][j].setCongestionRate(link[i][j].getCongestionRate() / (1 + UAV_count[j - 1]));
+                    link[i][j].setCapacity(link[i][j].getInitCapacity());
                 }
             }
         }
-
-    }
-
-    //管の容量を更新するメソッド
-    public void updateCapacity() {
+        // 各リンクの初期容量から飛行中のUAV分を減少
         for (int i = 0; i < node; i++) {
             for (int j = 0; j < node; j++) {
-                if (link[i][j].getL_tubeLength() != INF) {
-                    link[i][j].setCapacity(link[i][j].getD_tubeThickness() * link[i][j].getL_tubeLength());
+                if (link[i][j].getL_tubeLength() != INF && FlyingUAV[i][j] > 0) {
+                    double newCapacity = link[i][j].getCapacity() - FlyingUAV[i][j];
+                    link[i][j].setCapacity(newCapacity);
+                    link[j][i].setCapacity(newCapacity);
                 }
             }
         }
     }
+
+
 
     //PSを実行するメソッド
-    public void run(Client client, int numLoop) throws IOException {
+    public void run(Client client, Queue<Client> passedClient, ClientController clientcontroller, int numLoop) throws IOException {
         int nodeExcept = node - 1;
         int ct = 0;
         double eps = 1e-10;
@@ -489,9 +631,14 @@ public class PhysarumSolver {
 
         if(runCounter != 0){
             //更新メソッドを呼び出す
+            //flyUAV(passedClient);
             reset();
-            flyUAV(client);
-            updateCapacity();
+        }
+
+        //passedClientが空でない場合，UAVFlySchedulerを停止
+        if (!passedClient.isEmpty()) {
+            //ここではクライアントタイマーはすでに停止している
+            UAVFlyScheduler.stopFlyUAVUpdates(clientcontroller);
         }
 
         while (ct < numLoop) {
@@ -500,22 +647,16 @@ public class PhysarumSolver {
             Beacon dist = client.getFlow().getDestination();
             Q_Kirchhoff[source.getId()] = client.getFlow().getTheNumberOfUAV();
             Q_Kirchhoff[dist.getId()] = client.getFlow().getTheNumberOfUAV() * NEG;
-            sourceCluster.add(source.getId());
-            distCluster.add(dist.getId());
-
 
             for(i=0; i<node; i++){
                 pressureCoefficient[i][i] = 0.0;  // i番目の行、i番目の列に0.0を設定
-                for(j=0; j< sourceCluster.size(); j++){
-                    for(int k=0; k< distCluster.size(); k++){
-                        if(i == sourceCluster.get(j) || i == distCluster.get(k)){
-                            fig_DIST = true;
-                        }
-                    }
+
+                if(i == source.getId() || i == dist.getId()){
+                    fig_DIST = true;
                 }
+
                 if(!fig_DIST){
                     Q_Kirchhoff[i] = 0.0;
-
                 }
                 fig_DIST = false;
             }
@@ -541,9 +682,9 @@ public class PhysarumSolver {
                 k++;
             }
 
-             if(BiCGSTAB.BiCGSTAB(pressureCoefficient, Q_Kirchhoff, P_tubePressure, node, testIter, eps) == 0){
+            if(BiCGSTAB.BiCGSTAB(pressureCoefficient, Q_Kirchhoff, P_tubePressure, node, testIter, eps) == 0){
                 break;
-             }
+            }
 
             // 流量の計算
             for (i = 0; i < node; i++) {
@@ -589,23 +730,26 @@ public class PhysarumSolver {
                 outputToExcel(client, ct);
                 outputToTxt(client, ct);
             }
+            if(ct % PLOT_2 == 0 || ct == numLoop - 1){
+                outputRouteToExcel(client, ct);
+            }
 
             ct++;
             // 最後のループの場合に実行する処理
             // UAV一台ずつに経路を配列として受け渡し、飛行経路をすべてのUAVに割り当てる
             if (ct == numLoop) {
-                // 初期設定として、Flow_CapacityにQ_tubeFlowを代入
+                // 初期設定として、Flow_CapacityにQ_tubeFlowを代入,各リンクを流れる流量の整数値をtubeFlowに追加
+                System.out.println("breakout point");
                 for (i = 0; i < node; i++) {
                     for (j = 0; j < node; j++) {
-                        Flow_Capacity[i][j] = link[i][j].getQ_tubeFlow();
-                    }
-                }
-
-                // 各リンクを流れる流量の整数値をtubeFlowに追加
-                for (i = 0; i < node; i++) {
-                    for (j = 0; j < node; j++) {
-                        int flow = (int) Math.floor(Flow_Capacity[i][j]);
-                        tubeFlow[i][j] = flow;
+                        if(link[i][j].getL_tubeLength() != INF) {
+                            adjMatrix[i][j] = 1;
+                            if(link[i][j].getQ_tubeFlow() > 0) {
+                                Flow_Capacity[i][j] = link[i][j].getQ_tubeFlow();
+                                int flow = (int) Math.floor(Flow_Capacity[i][j]);
+                                tubeFlow[i][j] = flow;
+                            }
+                        }
                     }
                 }
 
@@ -615,70 +759,29 @@ public class PhysarumSolver {
                 int goalNode = client.getFlow().getDestination().getId();
                 int requiredUAVs = (int) client.getFlow().getTheNumberOfUAV();
 
+                if(runCounter != 0) {
+                    //UAVFlySchedulerを開始
+                    UAVFlyScheduler.startFlyUAVUpdates(passedClient, clientcontroller);
+                }
                 // 実際のUAVに経路を割り当てるためのメイン処理
                 runUAVFlow(startNode, goalNode, requiredUAVs, client);
             }
         }
         //client.startTimer();
         runCounter++;
-        reset();
     }
 
 
-    // UAVの経路を探索し、各UAVに経路を割り当てるメソッド
-    public void runUAVFlow(int startNode, int goalNode, int requiredUAVs, Client client) {
-        UAV_count = 0; // ゴールに到達したUAVの数を追跡
-
-        // 全UAV分の経路を格納するリスト
-        List<ArrayList<Integer>> paths = new ArrayList<>(requiredUAVs);
-
-        // 要求UAV数に到達するまで経路探索を繰り返す
-        while (UAV_count < requiredUAVs) {
-            int previousUAVCount = UAV_count;
-            min_Flow = 100;
-
-            // 新しい経路を格納するリストを初期化し、スタートノードを追加
-            ArrayList<Integer> path = new ArrayList<>(5);
-            path.add(startNode);
-
-            // スタートノードから経路を再帰的に探索し、成功時にUAV_countを増加
-            int flow = 0;
-            flow = explorePath(startNode, startNode, startNode, goalNode, path, flow); // 流量（UAV台数）を取得
-
-            if (flow > 0) {
-                // 見つかった経路を `flow` 回 `paths` に追加
-                for (int f = 0; f < flow; f++) {
-                    paths.add(new ArrayList<>(path));
-                    client.getFlow().getUav(UAV_count + f).setPath(path);
-                    client.getFlow().getUav(UAV_count + f).startTimer();
-                }
-                UAV_count += flow;  // UAV_countを流量分増加
-            } else {
-                //変更する必要がある
-                if (previousUAVCount == UAV_count && UAV_count < requiredUAVs) {
-                    int needUAV = requiredUAVs - UAV_count;
-                    adjustRemainingFlow(needUAV, startNode, goalNode, client);
-                    break;
-                }
-            }
-
-            if(UAV_count == requiredUAVs) break;
-        }
-
-        // 全UAVに経路を割り当てられなかった場合の警告
-        if (UAV_count < requiredUAVs) {
-            System.out.println("全てのUAVに経路が割り当てられませんでした");
-        }
-    }
-
-    /**
-     * 再帰的な経路探索でリンクを辿り、経路を記録するメソッド（DFS）
-     * 探索が成功したら流量（UAV数）を返し、pathリストに経路を追加
-     */
-    private int explorePath(int startNode, int passedNode, int currentNode, int goalNode, ArrayList<Integer> path, int passedFlow) {
+    //深さ優先探索(DFS)
+    private int explorePath(int startNode, int currentNode, int goalNode, int[] path, int pathIndex, int passedFlow) {
         // ゴールノードに到達したら流量を返して経路探索を終了
         if (currentNode == goalNode) {
             return passedFlow;
+        }
+
+        // `maxPathIndex` を `pathIndex` と比較して更新
+        if (pathIndex > maxPathIndex) {
+            maxPathIndex = pathIndex;
         }
 
         // 次のノードを探索し、経路を進む
@@ -694,15 +797,16 @@ public class PhysarumSolver {
                 }
 
                 // 経路に次のノードを追加
-                path.add(nextNode);
+                path[pathIndex] = nextNode;
 
                 // 最終的に見つかった経路に沿ってフローを減少させる
                 if (nextNode == goalNode && min_Flow > 0) {
                     int nodeA = startNode;
-                    for (int nodeB : path) {
+                    for (int i = 0; i <= pathIndex; i++) {
+                        int nodeB = path[i];
                         // `tubeFlow` と `Flow_Capacity` を減算
-                        tubeFlow[nodeA][nodeB] = tubeFlow[nodeA][nodeB] - min_Flow;
-                        Flow_Capacity[nodeA][nodeB] = Flow_Capacity[nodeA][nodeB] - min_Flow;
+                        tubeFlow[nodeA][nodeB] -= min_Flow;
+                        Flow_Capacity[nodeA][nodeB] -= min_Flow;
 
                         // `tubeFlow` が0なら `adjMatrix` から接続を削除
                         if (tubeFlow[nodeA][nodeB] == 0) {
@@ -711,14 +815,14 @@ public class PhysarumSolver {
                         nodeA = nodeB;
                     }
                 }
+
                 // 再帰的に経路を探索し、成功時には流量を返す
-                int resultFlow = explorePath(startNode, currentNode, nextNode, goalNode, path, min_Flow);
+                int resultFlow = explorePath(startNode, nextNode, goalNode, path, pathIndex + 1, min_Flow);
                 if (resultFlow > 0) {
                     return resultFlow; // 見つかった最小フローを返す
                 }
 
-                // 探索が失敗した場合、経路からノードを削除（バックトラック）
-                path.remove(path.size() - 1);
+                // 探索が失敗した場合、pathIndexを戻して最後のノードを削除（バックトラック）
                 min_Flow = (int) INF;  // 最小フローをリセット
             }
         }
@@ -726,16 +830,132 @@ public class PhysarumSolver {
         return 0; // 失敗した場合、流量0を返す
     }
 
+    //幅優先探索(BFS)
+    private int explorePathBFS(int startNode, int goalNode, int[][] path, int[] pathIndex) {
+        Queue<Integer> queue = new LinkedList<>(); // ノードを探索するためのキュー
+        int[] parent = new int[node];             // 各ノードの親を記録
+        Arrays.fill(parent, -1);                  // 初期化（-1は親なしを意味する）
+        boolean[] visited = new boolean[node];    // 訪問済みノードを追跡
+        int[] flow = new int[node];               // 各ノードに到達する最小フロー
+
+        // スタートノードを初期化
+        queue.add(startNode);
+        visited[startNode] = true;
+        flow[startNode] = Integer.MAX_VALUE; // 初期フローは∞
+
+        // 幅優先探索開始
+        while (!queue.isEmpty()) {
+            int currentNode = queue.poll();
+
+            // ゴールノードに到達した場合、経路を復元してフローを更新
+            if (currentNode == goalNode) {
+                int minFlow = flow[goalNode];
+
+                // 経路復元とフロー更新
+                int nodeA = goalNode;
+                int index = 0;
+                while (parent[nodeA] != -1) {
+                    int nodeB = parent[nodeA];
+                    path[index][0] = nodeB; // 経路の開始ノード
+                    path[index][1] = nodeA; // 経路の終了ノード
+                    index++;
+
+                    // フローの減算
+                    tubeFlow[nodeB][nodeA] -= minFlow;
+                    Flow_Capacity[nodeB][nodeA] -= minFlow;
+
+                    // `tubeFlow` が0なら `adjMatrix` から接続を削除
+                    if (tubeFlow[nodeB][nodeA] == 0) {
+                        adjMatrix[nodeB][nodeA] = 0;
+                    }
+
+                    nodeA = nodeB;
+                }
+                pathIndex[0] = index; // 経路の長さを記録
+                return minFlow;
+            }
+
+            // 隣接ノードを探索
+            for (int nextNode = 0; nextNode < node; nextNode++) {
+                if (adjMatrix[currentNode][nextNode] == 1 && tubeFlow[currentNode][nextNode] > 0 && !visited[nextNode]) {
+                    visited[nextNode] = true;
+                    parent[nextNode] = currentNode; // 親ノードを記録
+                    flow[nextNode] = Math.min(flow[currentNode], tubeFlow[currentNode][nextNode]); // 最小フローを記録
+                    queue.add(nextNode);
+                }
+            }
+        }
+
+        return 0; // ゴールノードに到達できなかった場合
+    }
+
+
+    // runUAVFlow関数
+    public void runUAVFlow(int startNode, int goalNode, int requiredUAVs, Client client) {
+        UAV_count = 0; // ゴールに到達したUAVの数を追跡
+
+        // 全UAV分の経路を格納する配列（各経路の最大ノード数を指定）
+        int maxPathLength = 5; // 経路の最大ノード数を想定して指定
+        int[][] paths = new int[requiredUAVs][maxPathLength];
+
+        // 要求UAV数に到達するまで経路探索を繰り返す
+        while (UAV_count < requiredUAVs) {
+            int previousUAVCount = UAV_count;
+            min_Flow = 100;
+
+            // 新しい経路を格納する一時配列を初期化し、スタートノードを追加
+            int[] path = new int[maxPathLength];
+            int pathIndex = 0; // path 配列内の位置を追跡
+            path[pathIndex++] = startNode;
+
+            // 最大のpathIndexを追跡するための変数
+            maxPathIndex = pathIndex;
+
+            // スタートノードから経路を再帰的に探索し、成功時にUAV_countを増加
+            int flow = explorePath(startNode, startNode, goalNode, path, pathIndex, 0); // 流量（UAV台数）を取得
+
+            if (flow > 0) {
+                // 見つかった経路を `flow` 回 `paths` に追加
+                for (int f = 0; f < flow; f++) {
+                    int[] pathArray = new int[maxPathIndex+1]; // 最大のpathIndexで配列を作成
+                    System.arraycopy(path, 0, pathArray, 0, maxPathIndex+1); // 必要な部分のみをコピー
+                    paths[UAV_count + f] = pathArray;
+
+                    client.getFlow().getUav(UAV_count + f).setPath(pathArray); // 配列をUAVに設定
+                    client.getFlow().getUav(UAV_count + f).startTimer();
+
+                }
+                UAV_count += flow; // UAV_count を流量分増加
+            } else {
+                // 要求されたUAV数にまだ満たない場合、残りの流量を調整
+                if (previousUAVCount == UAV_count && UAV_count < requiredUAVs) {
+                    int needUAV = requiredUAVs - UAV_count;
+                    adjustRemainingFlow(needUAV, startNode, goalNode, client);
+                    break;
+                }
+            }
+
+            if (UAV_count == requiredUAVs) break;
+        }
+
+        // 全UAVに経路を割り当てられなかった場合の警告
+        if (UAV_count < requiredUAVs) {
+            System.out.println("全てのUAVに経路が割り当てられませんでした");
+        }
+    }
 
 
 
     private void adjustRemainingFlow(int needUAV, int startNode, int goalNode, Client client) {
         int countOfUAV = 0;
-        ArrayList<Integer> path = new ArrayList<>(5); // path を再利用
+        int[] path = new int[5]; // path を再利用
+        int pathIndex;
 
         while (countOfUAV < needUAV) {
-            path.clear();  // 毎回新たに初期化せず再利用
-            path.add(startNode);
+            // pathIndexを0にリセットして、配列を再利用
+            pathIndex = 0;
+            Arrays.fill(path, 0);
+            path[pathIndex++] = startNode;
 
             int currentNode = startNode;
             boolean pathFound = false;
@@ -775,10 +995,10 @@ public class PhysarumSolver {
                 }
 
                 // 選択されたリンクに沿ってtubeFlowとFlow_Capacityを減少させ、経路を進む
-                path.add(nextNode);
+                path[pathIndex++] = nextNode;
                 int flow = tubeFlow[currentNode][nextNode];
-                tubeFlow[currentNode][nextNode] = tubeFlow[currentNode][nextNode] - flow;
-                Flow_Capacity[currentNode][nextNode] = Flow_Capacity[currentNode][nextNode] - flow;
+                tubeFlow[currentNode][nextNode] -= flow;
+                Flow_Capacity[currentNode][nextNode] -= flow;
 
                 currentNode = nextNode;
 
@@ -791,7 +1011,9 @@ public class PhysarumSolver {
                     // 複数のUAVが同じ経路を使用できる場合、それぞれに経路を設定
                     for (int uav = 0; uav < flow; uav++) {
                         if (uav >= needUAV) break;
-                        client.getFlow().getUav(UAV_count - 1).setPath(new ArrayList<>(path));
+                        int[] assignedPath = new int[pathIndex];
+                        System.arraycopy(path, 0, assignedPath, 0, pathIndex);
+                        client.getFlow().getUav(UAV_count - 1).setPath(assignedPath);
                         client.getFlow().getUav(UAV_count - 1).startTimer();
                     }
                     break;

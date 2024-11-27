@@ -7,34 +7,32 @@ import java.util.Random;
 
 public class Client {
     private Flow flow;
-    private UAVTimer uavTimer;
+    private int Id;
+    Random random = new Random(12345);
 
     private int finishFlyingCounter = 0;
 
-    public Client(Flow flow) {
+    public Client(Flow flow, int id) {
         this.flow = flow;
+        this.Id = id;
         createUav(flow);
 
     }
 
     //UAV数だけUAVを生成
     public void createUav(Flow flow) {
-        ArrayList<Uav> uavList= new ArrayList<>((int) flow.getTheNumberOfUAV());
+        Uav[] uavList= new Uav[((int) flow.getTheNumberOfUAV())];
         //UAV数だけUAVを生成
         for (int i = 0; i < flow.getTheNumberOfUAV(); i++) {
-            Random random = new Random();
-            double speed = 8 + (random.nextDouble() * 8);  // 8~16の範囲に設定
+            double speed = 14 + (random.nextDouble() * 16);// 8~16の範囲に設定
+
             Uav uav = new Uav(speed, flow.getSource().getX(), flow.getSource().getY(), i, flow.getSource(), flow.getDestination());
-            uavList.add(uav);
+            uavList[i] = uav;
         }
 
         flow.setUavList(uavList);
     }
 
-    public void startTimer(){
-        uavTimer = new UAVTimer();
-        uavTimer.start();
-    }
     public int getFinishFlyingCounter() {
         return finishFlyingCounter;
     }
@@ -51,4 +49,11 @@ public class Client {
         return flow;
     }
 
+    public int getId() {
+        return Id;
+    }
+
+    public void setId(int id) {
+        Id = id;
+    }
 }
